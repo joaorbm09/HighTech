@@ -35,7 +35,7 @@ $email = '';    // Armazena o e-mail digitado para reexibir no campo após um er
 // O parâmetro ?sucesso=cadastrado é passado na URL pela página cadastrar.php após um cadastro bem-sucedido
 // Isso evita mostrar a mensagem em qualquer outro acesso à página de login
 if (isset($_GET['sucesso']) && $_GET['sucesso'] === 'cadastrado') {
-    $mensagem = '<div class="alert alert-success">✅ Cadastro realizado com sucesso! Faça seu login abaixo.</div>';
+    $mensagem = '<div class="alert alert-success"> Cadastro realizado com sucesso! Faça seu login abaixo.</div>';
 }
 
 /* VERIFICAÇÃO DE CONEXÃO COM O BANCO — Antes de qualquer operação, confirma que o banco está acessível */
@@ -43,7 +43,7 @@ if (isset($_GET['sucesso']) && $_GET['sucesso'] === 'cadastrado') {
 // Se a variável $conexao for falsa (null, false ou recurso inválido), avisa o usuário sobre o problema
 // Isso protege o sistema de tentar executar queries sem conexão, o que causaria erros PHP fatais
 if (!$conexao) {
-    $mensagem = '<div class="alert alert-danger">⚠️ Erro de conexão com o banco de dados PostgreSQL. Verifique as configurações em database/connect.php.</div>';
+    $mensagem = '<div class="alert alert-danger"> Erro de conexão com o banco de dados PostgreSQL. Verifique as configurações em database/connect.php.</div>';
 }
 
 /* PROCESSAMENTO DO FORMULÁRIO — Executado apenas quando o formulário de login é enviado via POST */
@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<!-- ==================== INÍCIO DO HTML ==================== -->
+<!--  INÍCIO DO HTML  -->
 <!DOCTYPE html>
 <!-- Define o tipo do documento como HTML5 e o idioma como português brasileiro -->
 <html lang="pt-br">
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="admin-card" style="max-width: 450px; margin: 2rem auto;">
 
             <!-- Título principal do formulário, centralizado -->
-            <h2 style="text-align: center; margin-bottom: 0.5rem;">Acesse sua Conta 🔒</h2>
+            <h2 style="text-align: center; margin-bottom: 0.5rem;">Acesse sua Conta </h2>
 
             <!-- Subtítulo explicativo para orientar o usuário sobre o que preencher -->
             <p style="text-align: center; color: var(--text-muted); margin-bottom: 1.5rem;">Entre com seu e-mail e senha cadastrados</p>
