@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HighTech - Inovações e Negócios</title>
+    <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
     <?php include __DIR__ . '/includes/header.php' ;?>
