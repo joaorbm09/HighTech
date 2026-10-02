@@ -3,6 +3,7 @@
 require_once __DIR__ . '/includes/auth.php'; //auth.php: Carrega as regras de autenticação e sessão.
 require_once __DIR__ . '/includes/functions.php'; // functions.php: Carrega as funções do sistema, incluindo a função de conexão com o banco de dados ($conexao) e a função que salva os dados
 
+// Armazena o alerta que será exibido após o envio do formulário corporativo.
 $mensagem = '';
 
 // Processamento do Formulário Corporativo (B2B)
@@ -37,15 +38,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
     }
 }
 ?>
+<!-- Estrutura HTML da página pública do portal corporativo. -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <!-- Define codificação, responsividade, título da aba e estilos compartilhados. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HighTech - Inovações e Negócios</title>
     <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
+    <!-- Inclui o cabeçalho e menu reutilizados em todo o sistema. -->
     <?php include __DIR__ . '/includes/header.php' ;?>
     <!-- Hero section -->
 
@@ -57,13 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
             <span class="badge">Tecnologia & Inovação</span>
             <h2>Soluções Corporativas & Capacitação de alto nivel</h2>
             <p>Impulsionamos empresas e profissionais através de transformação digital, automação e formação especializada integrada ao banco de dados.</p>
-            <!-- Agrupa os dois botões no topo do site -->
-            <div class="hero-actions">
-                <!-- Botão pricipal Redireciona o usuário para a página school.php. -->
-                <a href="school.php" class="btn btn-primary">Acessar HighTech School</a>
-                <!-- Botão secundario redireciona para o caminho app/alunos.php (nste caso esta redirecionando para uma pasta "app", que contem o arquivo alunos.php)-->
-                <a href="app/alunos.php" class="btn btn-outline">Painel Adiminstrativo</a>
-            </div>
         </div>
     </div>
 
@@ -80,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
 
         <!-- NUMEROS E DIFERENCIAIS -->
          <!-- Funciona como a "caixa mãe" que segura todos os cartões. -->
+         <!-- Resume dados e diferenciais do projeto em cartões estatísticos. -->
          <div class="stat-grid">
             <div class="stat-card">
                 <!-- Exibe o destaque em texto grande e negrito (ex: "4", "100%", "PostgreSQL"). -->
@@ -105,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
          </div>
 
          <!-- SEÇÃO: PILARES DE SERVIÇOS PAR EMPRESAS -->
+        <!-- Apresenta os serviços oferecidos a empresas em cartões independentes. -->
         <section id="servicos">
             <!-- cabeçalho a seção que define o título e a introdução da seção de serviços para instruir o visitante sobre o tipo de apoio digital que a empresa oferece -->
             <div class="section-header">
@@ -177,6 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
         </section>
 
         <!-- BANNER DE INTEGRAÇÃO COM A ESCOLA -->
+        <!-- Banner direciona visitantes para os cursos e a vitrine de talentos. -->
         <div class="banner-highlight">
             <div>
                 <span class="badge" style="background: rgba(255,255,255,0.2); color: #FFF; margin-bottom: 0.5rem;">Sinergia Completa</span>
@@ -190,41 +190,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
         </div>
         
         <!-- SEÇÃO: FORMULÁRIO DE DIAGNÓSTICO E PROPOSTA B2B -->
+        <!-- Formulário B2B envia as informações para o processamento PHP no início do arquivo. -->
         <section id="diagnostico" class="admin-card">
             <div class="section-header">
                 <h2>Solicite um Diagnóstico Tecnológico Gratuito</h2>
                 <p>Conte-nos um pouco sobre a sua empresa e o desafio que deseja solucionar. Nossos especialistas entrarão em contato para estruturar a melhor proposta.</p>
             </div>
 
+            <!-- POST evita colocar dados de contato e mensagem na URL. -->
             <form action="portal_empresa.php#diagnostico" method="post">
                 <input type="hidden" name="solicitar_diagnostico" value="1">
 
+                <!-- Agrupa os campos do contato e do serviço solicitado em um layout responsivo. -->
                 <div class="form-grid">
+                    <!-- Identifica a organização que está solicitando o diagnóstico. -->
                     <div class="form-group">
                         <label for="nome_empresa">Nome da Empresa / Organização: *</label>
                         <input type="text" name="nome_empresa" id="nome_empresa" required placeholder="Ex: InovaTech Soluções">
                     </div>
 
+                    <!-- CNPJ é opcional e serve como dado complementar da organização. -->
                     <div class="form-group">
                         <label for="cnpj">CNPJ (Opcional):</label>
                         <input type="text" name="cnpj" id="cnpj" placeholder="00.000.000/0001-00">
                     </div>
 
+                    <!-- Informa quem deve receber o retorno da equipe HighTech. -->
                     <div class="form-group">
                         <label for="responsavel">Nome do Responsável / Cargo: *</label>
                         <input type="text" name="responsavel" id="responsavel" required placeholder="Ex: Ana Souza - Gerente de TI">
                     </div>
 
+                    <!-- E-mail corporativo é obrigatório para permitir o contato posterior. -->
                     <div class="form-group">
                         <label for="email">E-mail Corporativo: *</label>
                         <input type="email" name="email" id="email" required placeholder="contato@empresa.com">
                     </div>
 
+                    <!-- Telefone é um canal alternativo de contato, por isso não é obrigatório. -->
                     <div class="form-group">
                         <label for="telefone">Telefone / WhatsApp:</label>
                         <input type="tel" name="telefone" id="telefone" placeholder="(11) 98765-4321">
                     </div>
 
+                    <!-- Faixas predefinidas registram o porte da equipe da organização. -->
                     <div class="form-group">
                         <label for="tamanho_equipe">Tamanho da Empresa:</label>
                         <select name="tamanho_equipe" id="tamanho_equipe">
@@ -235,6 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
                         </select>
                     </div>
 
+                    <!-- Serviço de interesse é obrigatório para orientar o diagnóstico solicitado. -->
                     <div class="form-group" style="grid-column: 1 / -1;">
                         <label for="servico_interesse">Qual serviço sua empresa precisa? *</label>
                         <select name="servico_interesse" id="servico_interesse" required>
@@ -247,12 +257,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
                         </select>
                     </div>
 
+                    <!-- Campo livre permite descrever cenário, necessidade ou objetivo do projeto. -->
                     <div class="form-group" style="grid-column: 1 / -1;">
                         <label for="mensagem">Descreva o cenário atual ou objetivo do seu projeto:</label>
                         <textarea name="mensagem" id="mensagem" rows="4" placeholder="Ex: Precisamos automatizar nossos relatórios diários de vendas e migrar os dados legados para PostgreSQL..."></textarea>
                     </div>
                 </div>
 
+                <!-- Envia os campos para validação e gravação da solicitação no banco. -->
                 <button type="submit" class="btn btn-primary" style="padding: 0.8rem 1.8rem; font-size: 1rem;">
                     Enviar Solicitação de Diagnóstico 📤
                 </button>
@@ -260,6 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
         </section>
     </main>
 
+    <!-- Inclui o rodapé institucional compartilhado pelas páginas do sistema. -->
     <?php include __DIR__ . '/includes/footer.php'; ?>
 
 </body>

@@ -76,6 +76,12 @@ $usuario_logado = obterUsuarioLogado();
             <!-- Link para gerenciamento dos cursos oferecidos -->
             <a href="<?php echo $base_url; ?>app/cursos.php" class="<?php echo ($current_page === 'cursos.php') ? 'active' : ''; ?>"> Gestão Cursos</a>
 
+            <!-- Link para cadastro e publicação de aulas -->
+            <a href="<?php echo $base_url; ?>app/gerenciar_aulas.php" class="<?php echo ($current_page === 'gerenciar_aulas.php') ? 'active' : ''; ?>"> Gestão de Aulas</a>
+
+            <!-- Link para configuração das provas e questões dos cursos -->
+            <a href="<?php echo $base_url; ?>app/gerenciar_provas.php" class="<?php echo ($current_page === 'gerenciar_provas.php') ? 'active' : ''; ?>"> Gestão de Provas</a>
+
             <!-- Link para gerenciamento das matrículas dos alunos nos cursos -->
             <a href="<?php echo $base_url; ?>app/matriculas.php" class="<?php echo ($current_page === 'matriculas.php') ? 'active' : ''; ?>"> Matrículas</a>
         <?php endif; ?>
@@ -83,6 +89,11 @@ $usuario_logado = obterUsuarioLogado();
         <?php if ($usuario_logado): ?>
             <!-- ÁREA DO USUÁRIO LOGADO -->
             <!-- Exibe o nome e o perfil do usuário autenticado no canto direito da nav -->
+            <!-- O painel acadêmico é destinado a alunos; administradores usam as opções de gestão acima. -->
+            <?php if ($usuario_logado['perfil'] !== 'admin'): ?>
+                <a href="<?php echo $base_url; ?>app/meu_painel.php" class="<?php echo ($current_page === 'meu_painel.php') ? 'active' : ''; ?>">Meu Painel</a>
+            <?php endif; ?>
+
             <span style="color: var(--primary); font-weight: 700; margin-left: auto; font-size: 0.9rem;">
                  Olá, <?php echo htmlspecialchars($usuario_logado['nome']); ?> 
                 <!-- htmlspecialchars() protege contra XSS, convertendo caracteres especiais em entidades HTML -->

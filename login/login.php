@@ -107,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
+<!-- Início da interface de autenticação, apresentada após processar eventual envio POST. -->
 <!--  INÍCIO DO HTML  -->
 <!DOCTYPE html>
 <!-- Define o tipo do documento como HTML5 e o idioma como português brasileiro -->
@@ -142,10 +143,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- O echo renderiza o HTML completo da div de alerta, incluindo classes e ícones -->
             <?php echo $mensagem; ?>
 
+            <!-- Formulário de login: envia as credenciais via POST para este mesmo arquivo. -->
             <!-- Formulário de login: envia os dados via POST para este mesmo arquivo (login.php) -->
             <!-- O método POST é usado porque dados sensíveis (senha) não devem aparecer na URL -->
             <form action="login.php" method="post">
 
+                <!-- Campo de e-mail usado pelo servidor para localizar a conta. -->
                 <!-- Campo de e-mail: o type="email" valida o formato antes mesmo de enviar ao servidor -->
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label for="email">E-mail: *</label>
@@ -154,6 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="email" name="email" id="email" required placeholder="seuemail@hightech.com" value="<?php echo htmlspecialchars($email); ?>">
                 </div>
 
+                <!-- Campo de senha de acesso; os caracteres ficam ocultos durante a digitação. -->
                 <!-- Campo de senha: type="password" oculta os caracteres digitados na tela -->
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label for="senha">Senha: *</label>
@@ -176,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <!-- Inclui o rodapé padrão do site (informações da empresa, links úteis) -->
+    <!-- Insere o rodapé compartilhado com os caminhos relativos à pasta login/. -->
     <?php include __DIR__ . '/../includes/footer.php'; ?>
 </body>
 </html>

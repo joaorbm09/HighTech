@@ -44,6 +44,7 @@ if (!empty($busca)) {
     });
 }
 ?>
+<!-- Início da interface HTML da vitrine pública de talentos. -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -83,6 +84,7 @@ if (!empty($busca)) {
     </div>
 
     <main class="container">
+        <!-- Formulário GET mantém o termo pesquisado na URL e permite compartilhar o filtro. -->
         <!-- BARRA DE PESQUISA & FILTROS — Formulário de busca por nome, especialidade ou habilidade -->
         <!-- Usa admin-card como fundo diferenciado para destacar visualmente a área de filtro -->
         <div class="admin-card" style="margin-bottom: 2rem; padding: 1.5rem;">
@@ -106,6 +108,7 @@ if (!empty($busca)) {
             </form>
         </div>
 
+        <!-- Apresenta a quantidade de perfis encontrados depois da busca opcional. -->
         <!-- Cabeçalho da seção: exibe quantos profissionais foram encontrados após o filtro -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <!-- count() retorna o número de elementos no array, mesmo após o array_filter -->
@@ -114,6 +117,7 @@ if (!empty($busca)) {
             <span style="font-size: 0.9rem; color: var(--text-muted);">Atualizados em tempo real</span>
         </div>
 
+        <!-- Renderiza um cartão por profissional público ou uma mensagem quando não houver resultados. -->
         <!-- GRID DE TALENTOS — Vitrine responsiva com os cards de cada profissional disponível -->
         <!-- id="vitrine" permite que o botão "Explorar Perfis" do hero role até aqui -->
         <div id="vitrine" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
@@ -210,6 +214,7 @@ if (!empty($busca)) {
             <?php endif; ?>
         </div>
 
+        <!-- Oferece um caminho para o aluno editar o perfil ou autenticar-se antes de fazê-lo. -->
         <!-- BANNER DE CONVITE PARA ALUNOS — Incentiva alunos a completarem seu perfil no painel -->
         <div class="banner-highlight" style="margin-top: 3rem;">
             <div>
@@ -237,6 +242,7 @@ if (!empty($busca)) {
     </main>
 
     <!-- Inclui o rodapé compartilhado com informações institucionais e links do sistema -->
+    <!-- Finaliza a página com o rodapé compartilhado do sistema. -->
     <?php include __DIR__ . '/includes/footer.php'; ?>
 
 </body>

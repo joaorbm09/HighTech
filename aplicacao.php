@@ -98,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['inscrever'])) {
 $cursos = listarCursos($conexao);
 ?>
 
+<!-- Início da estrutura HTML da página pública da escola. -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -132,6 +133,7 @@ $cursos = listarCursos($conexao);
         <!-- Exibe a mensagem de feedback (sucesso, erro ou aviso) gerada pelo PHP acima -->
         <?php echo $mensagem; ?>
 
+        <!-- Apresenta a proposta educacional da escola antes do catálogo de cursos. -->
         <!-- Apresentacao da escola -->
         <section id="sobre">
             <div class="section-header">
@@ -140,6 +142,7 @@ $cursos = listarCursos($conexao);
             </div>
         </section>
 
+        <!-- Lista dinâmica de cursos consultados no PostgreSQL. -->
         <!-- Lista Dinâmica de Cursos vinda do Banco PostgreSQL -->
         <section id="cursos">
             <div class="section-header">
@@ -175,6 +178,7 @@ $cursos = listarCursos($conexao);
             </div>
         </section>
 
+        <!-- Formulário de inscrição: os dados são enviados ao processamento PHP no início do arquivo. -->
         <!-- Formulário de Inscrição Direta -->
         <!-- Esta seção tem id="inscricao" para que os botões dos cards possam ancorar até aqui -->
         <section id="inscricao" class="admin-card">
@@ -187,30 +191,35 @@ $cursos = listarCursos($conexao);
                 <input type="hidden" name="inscrever" value="1">
                 <!-- Layout em grade com duas colunas para organizar os campos do formulário -->
                 <div class="form-grid">
+                    <!-- Coleta o nome da pessoa que será associada ao cadastro acadêmico. -->
                     <div class="form-group">
                         <label for="nome">Nome Completo: *</label>
                         <!-- Se o usuário estiver logado, pré-preenche o nome automaticamente para facilitar -->
                         <input type="text" name="nome" id="nome" required value="<?php echo htmlspecialchars($usuario_logado['nome'] ?? ''); ?>" placeholder="Digite seu nome">
                     </div>
 
+                    <!-- CPF opcional para complementar a identificação do aluno. -->
                     <div class="form-group">
                         <label for="cpf">CPF:</label>
                         <!-- CPF é opcional — não possui 'required' pois alguns usuários podem não tê-lo -->
                         <input type="text" name="cpf" id="cpf" placeholder="000.000.000-00">
                     </div>
 
+                    <!-- E-mail usado para localizar ou criar o registro de aluno. -->
                     <div class="form-group">
                         <label for="email">E-mail: *</label>
                         <!-- Se logado, o e-mail também é pré-preenchido com o dado da sessão -->
                         <input type="email" name="email" id="email" required value="<?php echo htmlspecialchars($usuario_logado['email'] ?? ''); ?>" placeholder="seu@email.com">
                     </div>
 
+                    <!-- Data de nascimento opcional enviada junto com os dados da inscrição. -->
                     <div class="form-group">
                         <label for="nasc">Data de Nascimento:</label>
                         <!-- Campo de data nativo do HTML5 com calendário embutido no navegador -->
                         <input type="date" name="nasc" id="nasc">
                     </div>
 
+                    <!-- O seletor de curso ocupa as duas colunas e envia o ID escolhido ao servidor. -->
                     <!-- Este campo ocupa as duas colunas da grade (span 2) por ser mais importante -->
                     <div class="form-group" style="grid-column: span 2;">
                         <label for="id_curso">Selecione o Curso desejado: *</label>
@@ -231,12 +240,14 @@ $cursos = listarCursos($conexao);
                 </div>
 
                 <!-- Botão de envio do formulário — aciona o processamento POST no topo do arquivo -->
+                <!-- Envia os dados para validação e tentativa de matrícula no curso selecionado. -->
                 <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Confirmar Minha Inscrição</button>
             </form>
         </section>
     </main>
 
     <!-- Inclui o rodapé compartilhado por todas as páginas do sistema -->
+    <!-- Inclui o rodapé institucional compartilhado pelas páginas. -->
     <?php include __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>

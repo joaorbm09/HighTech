@@ -2,7 +2,9 @@
    HighTech System - Estilos Globais Integrados (Tech Modern & Clean)
    ========================================================================== */
 
+/* Tokens globais: concentram cores, sombras, cantos e tipografia reutilizados abaixo. */
 :root {
+    /* Superfícies e cores do texto definem o contraste padrão das páginas. */
     --bg-main: #F8FAFC;
     --bg-card: #FFFFFF;
     --bg-header: #0F172A;
@@ -11,17 +13,21 @@
     --text-muted: #64748B;
     --text-light: #F8FAFC;
     
+    /* Cores de ação e estados visuais mantêm botões e alertas consistentes. */
     --primary: #2563EB;
     --primary-hover: #1D4ED8;
     --primary-light: #EFF6FF;
     
+    /* Cores de apoio para destaques informativos e categorias de conteúdo. */
     --cyan-accent: #06B6D4;
     --cyan-light: #ECFEFF;
     
+    /* Cores semânticas comunicam sucesso, erro e atenção. */
     --success: #10B981;
     --danger: #EF4444;
     --warning: #F59E0B;
     
+    /* Bordas e sombras criam separação visual entre cartões e elementos. */
     --border-color: #E2E8F0;
     --border-accent: #CBD5E1;
     
@@ -29,6 +35,7 @@
     --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
     --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
     
+    /* Raios e fontes padronizam a aparência e a leitura da interface. */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
@@ -37,12 +44,14 @@
 }
 
 /* Reset básico */
+/* Remove margens padrão e inclui bordas no cálculo de largura dos elementos. */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Define a tipografia, as cores e a estrutura vertical global do documento. */
 body {
     font-family: var(--font-sans);
     background-color: var(--bg-main);
@@ -54,6 +63,7 @@ body {
 }
 
 /* Container Principal */
+/* Centraliza o conteúdo e limita sua largura em telas grandes. */
 .container {
     width: 100%;
     max-width: 1200px;
@@ -62,6 +72,7 @@ body {
 }
 
 /* Header & Navbar */
+/* Apresenta a identidade da empresa no topo da página. */
 header {
     background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
     color: var(--text-light);
@@ -71,6 +82,7 @@ header {
     box-shadow: var(--shadow-md);
 }
 
+/* Organiza a marca e o texto do cabeçalho em coluna e com espaçamento uniforme. */
 header .header-content {
     display: flex;
     flex-direction: column;
@@ -78,6 +90,7 @@ header .header-content {
     gap: 0.75rem;
 }
 
+/* Ajusta a imagem da marca sem distorcer sua proporção. */
 header img.logo {
     max-height: 60px;
     width: auto;
@@ -99,6 +112,7 @@ header p {
 }
 
 /* Navegação Navbar */
+/* Mantém o menu visível durante a rolagem e separa-o do conteúdo. */
 nav {
     background-color: #FFFFFF;
     border-bottom: 1px solid var(--border-color);
@@ -108,6 +122,7 @@ nav {
     box-shadow: var(--shadow-sm);
 }
 
+/* Alinha links e botões do menu e permite quebra em telas estreitas. */
 nav .nav-container {
     display: flex;
     justify-content: center;
@@ -155,6 +170,7 @@ hr {
 }
 
 /* Hero Section */
+/* Destaca a mensagem principal e as ações da página. */
 .hero {
     background: linear-gradient(180deg, #EFF6FF 0%, var(--bg-main) 100%);
     padding: 3rem 1.5rem;
@@ -164,6 +180,7 @@ hr {
 }
 
 .hero h2 {
+    /* Aplica hierarquia tipográfica e cor de título ao destaque principal. */
     font-size: 2.2rem;
     color: var(--text-heading);
     font-weight: 800;
@@ -171,6 +188,7 @@ hr {
 }
 
 .hero p {
+    /* Limita a largura do texto introdutório e centraliza a leitura. */
     font-size: 1.1rem;
     color: var(--text-body);
     max-width: 750px;
@@ -178,6 +196,7 @@ hr {
 }
 
 .hero-actions {
+    /* Mantém ações lado a lado e permite quebra quando faltar espaço. */
     display: flex;
     justify-content: center;
     gap: 1rem;
@@ -185,6 +204,7 @@ hr {
 }
 
 /* Botões e Badges */
+/* Base compartilhada de alinhamento, espaçamento e interação dos botões. */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -200,6 +220,7 @@ hr {
 }
 
 .btn-primary {
+    /* Identifica a ação principal com a cor primária do sistema. */
     background-color: var(--primary);
     color: #FFFFFF;
 }
@@ -209,16 +230,19 @@ hr {
 }
 
 .btn-success {
+    /* Usa a cor semântica positiva em botões de confirmação. */
     background-color: var(--success);
     color: #FFFFFF;
 }
 
 .btn-danger {
+    /* Usa a cor semântica de risco em ações destrutivas. */
     background-color: var(--danger);
     color: #FFFFFF;
 }
 
 .btn-outline {
+    /* Cria uma alternativa visual de menor ênfase para botões. */
     background-color: #FFFFFF;
     color: var(--text-heading);
     border: 1px solid var(--border-accent);
@@ -230,6 +254,7 @@ hr {
 }
 
 .badge {
+    /* Exibe classificações curtas como etiquetas compactas. */
     display: inline-block;
     padding: 0.3rem 0.65rem;
     font-size: 0.75rem;
@@ -241,6 +266,7 @@ hr {
 }
 
 /* Layout de Conteúdo */
+/* Faz o conteúdo principal ocupar o espaço disponível entre cabeçalho e rodapé. */
 main {
     flex: 1;
     padding-bottom: 3rem;
@@ -248,14 +274,17 @@ main {
 }
 
 section {
+    /* Mantém distância consistente entre as seções da página. */
     margin-bottom: 2.5rem;
 }
 
 .section-header {
+    /* Separa o título e a introdução do restante do conteúdo da seção. */
     margin-bottom: 1.5rem;
 }
 
 section h2 {
+    /* Destaca títulos de seção com alinhamento e tipografia comuns. */
     font-size: 1.6rem;
     color: var(--text-heading);
     font-weight: 700;
@@ -265,6 +294,7 @@ section h2 {
 }
 
 section h2::before {
+    /* Desenha a barra decorativa que antecede cada título de seção. */
     content: '';
     display: inline-block;
     width: 6px;
@@ -274,6 +304,7 @@ section h2::before {
 }
 
 .grid {
+    /* Cria uma grade que ajusta automaticamente a quantidade de colunas. */
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
@@ -281,6 +312,7 @@ section h2::before {
 }
 
 article, .card {
+    /* Dá aparência de cartão e organiza seu conteúdo verticalmente. */
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
@@ -292,6 +324,7 @@ article, .card {
 }
 
 /* Tabelas e Formulários Administrativos */
+/* Agrupa formulários e tabelas em cartões e grades responsivas. */
 .admin-card {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -302,6 +335,7 @@ article, .card {
 }
 
 .form-grid {
+    /* Organiza campos de formulário em colunas adaptáveis à largura disponível. */
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 1rem;
@@ -309,18 +343,21 @@ article, .card {
 }
 
 .form-group {
+    /* Agrupa o rótulo e o controle de cada campo em uma coluna. */
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
 }
 
 .form-group label {
+    /* Diferencia visualmente o texto que identifica cada controle. */
     font-weight: 600;
     font-size: 0.9rem;
     color: var(--text-heading);
 }
 
 .form-group input, .form-group select, .form-group textarea {
+    /* Padroniza dimensões, bordas e fonte dos controles de formulário. */
     padding: 0.6rem 0.8rem;
     font-size: 0.95rem;
     border: 1px solid var(--border-accent);
@@ -329,12 +366,14 @@ article, .card {
 }
 
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    /* Torna visível o foco do teclado nos campos editáveis. */
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 .styled-table {
+    /* Define a apresentação base das tabelas de listagem administrativa. */
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
@@ -345,6 +384,7 @@ article, .card {
 }
 
 .styled-table th {
+    /* Destaca os cabeçalhos para diferenciar os títulos das colunas. */
     background-color: #0F172A;
     color: #FFFFFF;
     text-align: left;
@@ -354,17 +394,20 @@ article, .card {
 }
 
 .styled-table td {
+    /* Padroniza espaçamento e divisórias entre os valores da tabela. */
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-color);
     font-size: 0.95rem;
 }
 
 .styled-table tr:hover {
+    /* Realça a linha apontada pelo mouse para facilitar sua leitura. */
     background-color: #F1F5F9;
 }
 
 /* Mensagens de Alerta */
 .alert {
+    /* Define espaçamento comum para avisos e mensagens de resultado. */
     padding: 0.8rem 1.2rem;
     border-radius: var(--radius-sm);
     margin-bottom: 1.5rem;
@@ -372,18 +415,21 @@ article, .card {
 }
 
 .alert-success {
+    /* Comunica conclusão bem-sucedida com cores positivas. */
     background-color: #D1FAE5;
     color: #065F46;
     border: 1px solid #A7F3D0;
 }
 
 .alert-danger {
+    /* Comunica falha ou risco com cores de erro. */
     background-color: #FEE2E2;
     color: #991B1B;
     border: 1px solid #FCA5A5;
 }
 
 .alert-warning {
+    /* Comunica validações ou situações que exigem atenção. */
     background-color: #FEF3C7;
     color: #92400E;
     border: 1px solid #FDE68A;
@@ -391,6 +437,7 @@ article, .card {
 
 /* Rodapé */
 footer {
+    /* Mantém o rodapé no fim da coluna flexível e aplica o fundo escuro. */
     background-color: var(--bg-header);
     color: #94A3B8;
     padding: 2.5rem 0 1.5rem;
@@ -398,6 +445,7 @@ footer {
 }
 
 footer .footer-container {
+    /* Centraliza e organiza as informações institucionais do rodapé. */
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1.5rem;
@@ -409,17 +457,20 @@ footer .footer-container {
 }
 
 footer h2 {
+    /* Dá ênfase ao nome da empresa no rodapé. */
     color: #FFFFFF;
     font-size: 1.3rem;
 }
 
 footer a {
+    /* Diferencia links de contato do texto comum do rodapé. */
     color: var(--cyan-accent);
     text-decoration: none;
     font-weight: 600;
 }
 
 footer .copyright {
+    /* Separa e reduz visualmente a linha de direitos autorais. */
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid #1E293B;
@@ -433,6 +484,7 @@ footer .copyright {
    ========================================================================== */
 
 .stat-grid {
+    /* Organiza indicadores em cartões responsivos. */
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.25rem;
@@ -440,6 +492,7 @@ footer .copyright {
 }
 
 .stat-card {
+    /* Apresenta cada indicador como cartão com borda lateral de destaque. */
     background: #FFFFFF;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
@@ -456,6 +509,7 @@ footer .copyright {
 .stat-card.stat-cyan    { border-left-color: var(--cyan-accent); }
 
 .stat-number {
+    /* Torna o valor de cada indicador o elemento visual mais proeminente. */
     font-size: 2rem;
     font-weight: 800;
     color: var(--text-heading);
@@ -463,6 +517,7 @@ footer .copyright {
 }
 
 .stat-label {
+    /* Exibe a descrição de cada indicador como legenda secundária. */
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-muted);
@@ -471,6 +526,7 @@ footer .copyright {
 }
 
 .pill-tag {
+    /* Formata cada habilidade como etiqueta compacta e arredondada. */
     display: inline-block;
     background-color: #F1F5F9;
     color: #334155;
@@ -484,6 +540,7 @@ footer .copyright {
 }
 
 .banner-highlight {
+    /* Destaca convites e chamadas importantes em um painel próprio. */
     background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
     color: #FFFFFF;
     padding: 2rem;
@@ -497,35 +554,40 @@ footer .copyright {
 }
 
 .banner-highlight h3 {
+    /* Realça o título dentro do banner de chamada. */
     color: #FFFFFF;
     font-size: 1.4rem;
     margin-bottom: 0.5rem;
 }
 
 .banner-highlight p {
+    /* Ajusta a leitura da descrição dentro do banner. */
     color: #94A3B8;
     max-width: 600px;
     margin-bottom: 0;
 }
 
 .table-responsive {
+    /* Permite rolagem horizontal quando uma tabela excede a tela. */
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 
 .badge-warning {
+    /* Variante de etiqueta para status que requer atenção. */
     background-color: #FEF3C7;
     color: #92400E;
 }
 
 .badge-success {
+    /* Variante de etiqueta para indicar situação positiva ou ativa. */
     background-color: #D1FAE5;
     color: #065F46;
 }
 
 .badge-primary {
+    /* Variante de etiqueta com a cor principal da identidade visual. */
     background-color: var(--primary-light);
     color: var(--primary);
 }
-

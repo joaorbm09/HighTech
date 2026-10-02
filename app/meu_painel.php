@@ -1,9 +1,12 @@
 <?php 
+// Carrega as rotinas de sessão e exige autenticação antes de exibir dados pessoais.
 require_once __DIR__ . '/../includes/auth.php';
 exigirLogin();
 
+// Carrega operações de banco usadas para consultar cursos e salvar o perfil do aluno.
 require_once __DIR__ . '/../includes/functions.php';
 
+// Recupera a identidade autenticada e prepara o feedback apresentado nesta página.
 $usuario = obterUsuarioLogado();
 $mensagem = '';
 
@@ -16,10 +19,13 @@ if (!$aluno && $conexao) {
     $aluno = buscarAlunoPorEmail($conexao, $usuario['email']);
 }
 
+// Mantém null se não houver registro acadêmico para impedir operações dependentes de aluno inexistente.
 $id_aluno = $aluno['id'] ?? null;
 
 // Salvar / Atualizar Perfil de Talento
+// Distingue o envio do formulário de perfil de outras ações POST da mesma página.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_perfil']) && $id_aluno) {
+    // Lê e normaliza os campos textuais do perfil enviados pelo formulário.
     $titulo_profissional = trim($_POST['titulo_profissional'] ?? '');
     $bio = trim($_POST['bio'] ?? '');
     $linkedin = trim($_POST['linkedin'] ?? '');
@@ -27,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_perfil']) && $
     $habilidades = trim($_POST['habilidades'] ?? '');
     $disponivel = isset($_POST['disponivel_mercado']) ? true : false;
 
+    // Salva as informações e prepara uma mensagem conforme o resultado da operação.
     if (salvarPerfilTalento($conexao, $id_aluno, $titulo_profissional, $bio, $linkedin, $github, $habilidades, $disponivel)) {
         $mensagem = '<div class="alert alert-success">✅ <strong>Perfil atualizado com sucesso!</strong> Suas informações já estão sincronizadas com o Banco de Talentos.</div>';
     } else {
@@ -35,23 +42,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_perfil']) && $
 }
 
 // Inscrição Rápida em Curso Adicional
+// Identifica o formulário de matrícula rápida e só continua se houver um aluno associado.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['matricular_rapido']) && $id_aluno) {
-    $id_curso_novo = $_POST['id_curso'] ?? null;
-    if ($id_curso_novo) {
-        if (matricularAluno($conexao, $id_aluno, $id_curso_novo, 'Ativa')) {
-            $mensagem = '<div class="alert alert-success">🎓 <strong>Parabéns!</strong> Você foi matriculado com sucesso no novo curso.</div>';
+    // Lê o curso selecionado e ignora o envio se nenhum ID tiver sido informado.
+    $id_curso_raw = $_POST['id_curso'] ?? '';
+    $id_curso_novo = filter_var(
+        is_string($id_curso_raw) || is_int($id_curso_raw) ? $id_curso_raw : '',
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]
+    );
+    $csrf_enviado = $_POST['csrf_matricula'] ?? '';
+    $csrf_sessao = $_SESSION['csrf_matricula'] ?? '';
+    if (!is_string($csrf_enviado) || $csrf_sessao === '' || !hash_equals($csrf_sessao, $csrf_enviado)) {
+        http_response_code(400);
+        $mensagem = '<div class="alert alert-danger">A solicitação de matrícula expirou. Atualize a página e tente novamente.</div>';
+    } elseif ($id_curso_novo === false) {
+        $mensagem = '<div class="alert alert-warning">Selecione um curso válido.</div>';
+    } else {
+        $resultado_matricula = matricularAlunoEmCursoAtivo($conexao, $id_aluno, $id_curso_novo);
+        if ($resultado_matricula === 'created') {
+            $mensagem = '<div class="alert alert-success">🎓 <strong>Parabéns!</strong> Você foi matriculado. As aulas aparecem aqui quando o administrador publicá-las.</div>';
+        } elseif ($resultado_matricula === 'already_enrolled') {
+            $mensagem = '<div class="alert alert-warning">Você já possui matrícula ativa neste curso. Acesse as aulas pela lista acima.</div>';
+        } elseif ($resultado_matricula === 'course_unavailable') {
+            $mensagem = '<div class="alert alert-warning">Este curso não está disponível para novas matrículas.</div>';
         } else {
-            $mensagem = '<div class="alert alert-danger">❌ Erro ao realizar matrícula.</div>';
+            $mensagem = '<div class="alert alert-danger">❌ Erro ao realizar matrícula. Tente novamente mais tarde.</div>';
         }
     }
 }
 
+// Mantém um token de sessão para proteger o envio de novas matrículas.
+if (empty($_SESSION['csrf_matricula'])) {
+    $_SESSION['csrf_matricula'] = bin2hex(random_bytes(32));
+}
+
 // Dados do Aluno
+// Carrega cursos, perfil e catálogo para as seções apresentadas no painel.
 $meus_cursos = $id_aluno ? listarCursosDoAluno($conexao, $id_aluno) : [];
 $perfil_talento = $id_aluno ? obterPerfilTalentoPorAluno($conexao, $id_aluno) : false;
-$todos_cursos = listarCursos($conexao);
+$todos_cursos = $id_aluno
+    ? listarCursosDisponiveisParaMatricula($conexao, $id_aluno)
+    : false;
 
 // Total de Horas Acumuladas
+// Soma as cargas horárias dos cursos vinculados para exibir um total no resumo.
 $horas_totais = 0;
 foreach ($meus_cursos as $c) {
     $horas_totais += (int) $c['carga_horaria'];
@@ -112,8 +147,9 @@ foreach ($meus_cursos as $c) {
 
             <?php if (empty($meus_cursos)): ?>
                 <div class="alert alert-warning">
-                    Você ainda não está matriculado em nenhum curso. 
-                    <a href="../aplicacao.php#cursos" style="color: var(--primary); font-weight: bold; text-decoration: underline;">Clique aqui para escolher um curso</a>.
+                    Você ainda não possui matrícula ativa. Escolha um curso na seção
+                    <a href="#mais-cursos" style="color: var(--primary); font-weight: bold; text-decoration: underline;">Matrícula Express</a>
+                    abaixo para liberar os materiais depois que o administrador publicá-los.
                 </div>
             <?php else: ?>
                 <div class="grid">
@@ -132,22 +168,61 @@ foreach ($meus_cursos as $c) {
                                     <p><strong>Data de Inscrição:</strong> <?php echo date('d/m/Y', strtotime($curso['data_matricula'])); ?></p>
                                 </div>
 
-                                <!-- Barra de Progresso Simulado -->
+                                <?php
+                                    $aulas_total = (int) $curso['aulas_total'];
+                                    $aulas_concluidas = (int) $curso['aulas_concluidas'];
+                                    $progresso = $aulas_total > 0
+                                        ? (int) round(($aulas_concluidas / $aulas_total) * 100)
+                                        : 0;
+                                    $matricula_ativa = strcasecmp((string) $curso['matricula_status'], 'Ativa') === 0;
+                                ?>
                                 <div style="margin-top: 1rem;">
                                     <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem;">
-                                        <span>Progresso da Trilha</span>
-                                        <span style="color: var(--primary);">75% Concluído</span>
+                                        <span>Progresso das aulas</span>
+                                        <span style="color: var(--primary);"><?php echo $aulas_concluidas; ?>/<?php echo $aulas_total; ?> (<?php echo $progresso; ?>%)</span>
                                     </div>
                                     <div style="background: #E2E8F0; height: 8px; border-radius: 4px; overflow: hidden;">
-                                        <div style="background: var(--primary); width: 75%; height: 100%;"></div>
+                                        <div style="background: var(--primary); width: <?php echo $progresso; ?>%; height: 100%;"></div>
                                     </div>
+                                    <?php if ($aulas_total === 0): ?>
+                                        <small style="color: var(--text-muted);">As aulas deste curso ainda estão sendo preparadas.</small>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
                             <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
                                 <a href="../vagas.php" class="btn btn-outline" style="flex: 1; font-size: 0.85rem;">Ver Vagas da Área</a>
-                                <span class="btn btn-primary" style="flex: 1; font-size: 0.85rem; background: var(--success); cursor: default;">Aulas Liberadas ✓</span>
+                                <?php if ($matricula_ativa && $aulas_total > 0): ?>
+                                    <a href="aulas.php?id_curso=<?php echo (int) $curso['curso_id']; ?>" class="btn btn-primary" style="flex: 1; font-size: 0.85rem;">Acessar aulas</a>
+                                <?php elseif ($matricula_ativa): ?>
+                                    <span class="btn btn-outline" style="flex: 1; font-size: 0.85rem; cursor: default;">Aulas ainda não publicadas</span>
+                                <?php else: ?>
+                                    <span class="btn btn-outline" style="flex: 1; font-size: 0.85rem; cursor: default;">Matrícula inativa</span>
+                                <?php endif; ?>
                             </div>
+
+                            <?php if (!empty($curso['certificado_codigo'])): ?>
+                                <p style="margin-top: 0.75rem;">
+                                    <a class="btn btn-success" href="certificado.php?codigo=<?php echo urlencode($curso['certificado_codigo']); ?>">Ver certificado</a>
+                                </p>
+                            <?php elseif ($matricula_ativa && !empty($curso['prova_id'])): ?>
+                                <?php
+                                    $obrigatorias_total = (int) $curso['aulas_obrigatorias_total'];
+                                    $obrigatorias_concluidas = (int) $curso['aulas_obrigatorias_concluidas'];
+                                    $prova_pronta = $obrigatorias_total === $obrigatorias_concluidas;
+                                    $tentativas_usadas = (int) $curso['prova_tentativas_usadas'];
+                                    $tentativas_maximas = (int) $curso['prova_max_tentativas'];
+                                ?>
+                                <div style="margin-top: 0.75rem;">
+                                    <?php if (!$prova_pronta): ?>
+                                        <span class="badge">Conclua as aulas obrigatórias para liberar a prova</span>
+                                    <?php elseif ($tentativas_usadas < $tentativas_maximas): ?>
+                                        <a class="btn btn-outline" href="prova.php?id_curso=<?php echo (int) $curso['curso_id']; ?>">Fazer prova (<?php echo $tentativas_maximas - $tentativas_usadas; ?> tentativa(s) restante(s))</a>
+                                    <?php else: ?>
+                                        <span class="badge">Tentativas da prova esgotadas</span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                         </article>
                     <?php endforeach; ?>
                 </div>
@@ -218,11 +293,17 @@ foreach ($meus_cursos as $c) {
         <section id="mais-cursos" class="admin-card">
             <div class="section-header">
                 <h2>Matrícula Express ⚡</h2>
-                <p>Deseja ampliar suas habilidades? Selecione outro curso da escola para se matricular instantaneamente com sua conta:</p>
+                <p>Escolha um curso disponível para criar sua matrícula e acessar os materiais publicados nesse curso:</p>
             </div>
 
+            <?php if ($todos_cursos === false): ?>
+                <div class="alert alert-danger">Não foi possível carregar os cursos disponíveis.</div>
+            <?php elseif (empty($todos_cursos)): ?>
+                <div class="alert alert-success">Você já está matriculado em todos os cursos disponíveis.</div>
+            <?php else: ?>
             <form action="meu_painel.php#meus-cursos" method="post" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
                 <input type="hidden" name="matricular_rapido" value="1">
+                <input type="hidden" name="csrf_matricula" value="<?php echo htmlspecialchars($_SESSION['csrf_matricula'], ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="form-group" style="flex: 1; min-width: 250px;">
                     <label for="id_curso">Selecione o Curso:</label>
                     <select name="id_curso" id="id_curso" required>
@@ -236,6 +317,7 @@ foreach ($meus_cursos as $c) {
                 </div>
                 <button type="submit" class="btn btn-success">Confirmar Matrícula Imediata</button>
             </form>
+            <?php endif; ?>
         </section>
     </main>
 

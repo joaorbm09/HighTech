@@ -33,6 +33,7 @@ if (!empty($modalidade_filtro)) {
     });
 }
 ?>
+<!-- Início da estrutura HTML do mural público de oportunidades. -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -69,6 +70,7 @@ if (!empty($modalidade_filtro)) {
     </div>
 
     <main class="container">
+        <!-- Cabeçalho da listagem com contagem atual e atalhos para filtrar modalidade. -->
         <!-- FILTROS DE MODALIDADE — Barra com botões para filtrar vagas por tipo de trabalho -->
         <!-- Usa flexbox para organizar o título e os botões em linha, com quebra em telas pequenas -->
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
@@ -94,6 +96,7 @@ if (!empty($modalidade_filtro)) {
             </div>
         </div>
 
+        <!-- Exibe cartões de vaga filtrados ou um estado vazio com opção de limpar o filtro. -->
         <!-- LISTAGEM DE VAGAS — Grid responsivo com os cards de cada oportunidade -->
         <!-- id="vagas-lista" permite que o botão "Ver Todas as Vagas" do hero role a página até aqui -->
         <div id="vagas-lista" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));">
@@ -177,6 +180,7 @@ if (!empty($modalidade_filtro)) {
             <?php endif; ?>
         </div>
 
+        <!-- Direciona empresas interessadas em talentos ao formulário do portal corporativo. -->
         <!-- BANNER B2B PARA EMPRESAS — Convite para que empresas publiquem vagas no portal -->
         <div class="banner-highlight" style="margin-top: 3rem;">
             <div>
@@ -196,6 +200,7 @@ if (!empty($modalidade_filtro)) {
     </main>
 
     <!-- Inclui o rodapé compartilhado com links e informações institucionais -->
+    <!-- Acrescenta o rodapé institucional após o conteúdo principal. -->
     <?php include __DIR__ . '/includes/footer.php'; ?>
 
 </body>
