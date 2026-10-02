@@ -41,50 +41,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['inscrever'])) {
 
     /* VALIDAÇÃO BÁSICA — Garante que os campos obrigatórios foram preenchidos antes de prosseguir */
 
-    // Verifica se nome, email e id do curso não estão vazios — são o mínimo necessário para inscrever
-    if (!empty($nome) && !empty($email) && !empty($id_curso)) {
+    if (!$conexao) {
+        $mensagem = '<div class="alert alert-danger">⚠️ Sem conexão com o banco de dados. Tente novamente mais tarde.</div>';
+    } else if (!empty($nome) && !empty($email) && !empty($id_curso)) {
 
-        // Busca o usuário pelo e-mail na tabela de usuários do sistema de login (não é o mesmo que alunos)
-        $aluno_existente = buscarUsuarioPorEmail($conexao, $email);
-        
-        // Vai receber o ID do aluno após verificar ou cadastrar
+        // Normaliza e busca o aluno existente pelo e-mail
+        $aluno_db = buscarAlunoPorEmail($conexao, $email);
         $id_aluno = null;
 
-        /* VERIFICAÇÃO DE DUPLICIDADE — Evita cadastrar o mesmo aluno duas vezes na tabela 'alunos' */
-
-        // Prepara a consulta SQL parametrizada (evita SQL Injection) para buscar o aluno pelo e-mail
-        $stmt_check = $conexao->prepare("SELECT id FROM alunos WHERE email = :email");
-
-        // Vincula o valor da variável $email ao parâmetro :email da query
-        $stmt_check->bindParam(":email", $email);
-
-        // Executa a consulta no banco de dados
-        $stmt_check->execute();
-
-        // Tenta buscar um registro — retorna array com os dados do aluno ou false se não existir
-        $aluno_db = $stmt_check->fetch();
-
         if ($aluno_db) {
-            // Aluno já existe: reutiliza o ID dele para a matrícula, sem criar duplicata
+            // Aluno já existe: reutiliza o ID dele para a matrícula
             $id_aluno = $aluno_db['id'];
         } else {
-            // Aluno novo: chama a função de cadastro passando todos os dados coletados
-            // O último parâmetro 'true' indica que o aluno está ativo
+            // Aluno novo: cadastra na tabela alunos
             if (cadastrarAluno($conexao, $nome, $cpf, $email, $turma, $nasc, true)) {
-                // Recupera o ID gerado pela sequência PostgreSQL após o INSERT
-                $id_aluno = $conexao->lastInsertId('alunos_id_seq');
+                $novo_aluno = buscarAlunoPorEmail($conexao, $email);
+                $id_aluno = $novo_aluno['id'] ?? null;
             }
         }
 
-        /* MATRÍCULA — Associa o aluno ao curso selecionado com status 'Ativa' */
+        /* MATRÍCULA — Associa o aluno ao curso selecionado evitando duplicidade ativa */
+        if ($id_aluno) {
+            $resultado_matricula = matricularAlunoEmCursoAtivo($conexao, $id_aluno, $id_curso);
 
-        // Só tenta matricular se tiver um $id_aluno válido (cadastro novo ou aluno existente)
-        if ($id_aluno && matricularAluno($conexao, $id_aluno, $id_curso, 'Ativa')) {
-            // Tudo certo: exibe mensagem de boas-vindas em verde
-            $mensagem = '<div class="alert alert-success">Inscrição realizada com sucesso! Seja bem-vindo à HighTech School.</div>';
+            if ($resultado_matricula === 'created') {
+                $tem_usuario = buscarUsuarioPorEmail($conexao, $email);
+                if ($tem_usuario) {
+                    $mensagem = '<div class="alert alert-success">🎓 <strong>Inscrição realizada com sucesso!</strong> Faça seu <a href="login/login.php" style="font-weight: 700; text-decoration: underline;">Login aqui</a> para acessar suas aulas.</div>';
+                } else {
+                    $mensagem = '<div class="alert alert-success">🎓 <strong>Inscrição realizada com sucesso!</strong> Como este é seu primeiro acesso, <a href="login/cadastrar.php" style="font-weight: 700; text-decoration: underline;">crie sua senha aqui</a> para entrar no portal e assistir às aulas.</div>';
+                }
+            } elseif ($resultado_matricula === 'already_enrolled') {
+                $mensagem = '<div class="alert alert-warning">Você já possui uma matrícula ativa neste curso. Acesse seu <a href="app/meu_painel.php" style="font-weight: 700; text-decoration: underline;">Painel do Aluno</a> para ver as aulas.</div>';
+            } elseif ($resultado_matricula === 'course_unavailable') {
+                $mensagem = '<div class="alert alert-warning">Este curso não está disponível para novas matrículas no momento.</div>';
+            } else {
+                $mensagem = '<div class="alert alert-danger">Erro ao realizar inscrição no curso. Tente novamente mais tarde.</div>';
+            }
         } else {
-            // Falha na matrícula: exibe mensagem de erro em vermelho
-            $mensagem = '<div class="alert alert-danger">Erro ao realizar inscrição no curso.</div>';
+            $mensagem = '<div class="alert alert-danger">Erro ao registrar os dados do aluno. Tente novamente.</div>';
         }
     } else {
         // Campos obrigatórios faltando: orienta o usuário a preencher tudo

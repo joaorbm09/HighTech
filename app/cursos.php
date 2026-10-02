@@ -14,16 +14,23 @@ $mensagem = '';
 // Variável que guarda os dados do curso quando estamos no modo edição; null = modo cadastro
 $curso_edicao = null;
 
-/* BLOCO DE EXCLUSÃO DE CURSO */
-// Verifica se a URL contém ?action=delete&id=X — indica que o usuário clicou em "Excluir"
-if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
-    // Chama a função que executa o DELETE no banco de dados passando a conexão e o ID do curso
-    if (excluirCurso($conexao, $_GET['id'])) {
-        // Se a exclusão foi bem-sucedida, exibe mensagem verde de confirmação
-        $mensagem = '<div class="alert alert-success">Curso excluído com sucesso!</div>';
+// Inicializa o token CSRF de sessão para proteger operações da tela de cursos
+if (empty($_SESSION['csrf_cursos'])) {
+    $_SESSION['csrf_cursos'] = bin2hex(random_bytes(32));
+}
+
+/* BLOCO DE EXCLUSÃO DE CURSO (SEGURO VIA POST COM CSRF) */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'excluir') {
+    $token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_cursos'], (string)$token)) {
+        $mensagem = '<div class="alert alert-danger">Falha na validação de segurança (token expirado). Tente novamente.</div>';
     } else {
-        // Se houve erro (ex: curso vinculado a matrículas), exibe mensagem vermelha de falha
-        $mensagem = '<div class="alert alert-danger">Erro ao excluir curso.</div>';
+        $id_excluir = filter_var($_POST['id'] ?? '', FILTER_VALIDATE_INT);
+        if ($id_excluir && excluirCurso($conexao, $id_excluir)) {
+            $mensagem = '<div class="alert alert-success">Curso excluído com sucesso!</div>';
+        } else {
+            $mensagem = '<div class="alert alert-danger">Erro ao excluir curso. Verifique se ele não possui matrículas ou aulas vinculadas.</div>';
+        }
     }
 }
 
@@ -226,7 +233,7 @@ $cursos = listarCursos($conexao);
                                     <!-- Nome em negrito para destaque visual do título do curso -->
                                     <strong><?php echo htmlspecialchars($curso['nome']); ?></strong><br>
                                     <!-- Descrição exibida em tamanho menor e cor suavizada abaixo do nome -->
-                                    <small style="color: var(--text-muted);"><?php echo htmlspecialchars($curso['descricao']); ?></small>
+                                    <small style="color: var(--text-muted);"><?php echo htmlspecialchars($curso['descricao'] ?? ''); ?></small>
                                 </td>
                                 <!-- Categoria exibida como badge para destaque visual -->
                                 <td><span class="badge"><?php echo htmlspecialchars($curso['categoria']); ?></span></td>
@@ -247,9 +254,13 @@ $cursos = listarCursos($conexao);
                                 <td>
                                     <!-- Link para editar: passa action=edit e o ID do curso via GET -->
                                     <a href="cursos.php?action=edit&id=<?php echo $curso['id']; ?>" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;">Editar</a>
-                                    <!-- Link para excluir: o onclick pede confirmação antes de enviar a requisição -->
-                                    <!-- Isso evita exclusões acidentais de cursos que podem ter matrículas vinculadas -->
-                                    <a href="cursos.php?action=delete&id=<?php echo $curso['id']; ?>" onclick="return confirm('Tem certeza que deseja excluir este curso?');" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;">Excluir</a>
+                                    <!-- Formulário POST seguro para exclusão com proteção CSRF -->
+                                    <form action="cursos.php" method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este curso?');">
+                                        <input type="hidden" name="acao" value="excluir">
+                                        <input type="hidden" name="id" value="<?php echo (int) $curso['id']; ?>">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_cursos'], ENT_QUOTES, 'UTF-8'); ?>">
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.85rem; cursor: pointer;">Excluir</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

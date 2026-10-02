@@ -8,6 +8,27 @@ Por meio da aplicação, visitantes podem conhecer os serviços, consultar curso
 
 ---
 
+## 📌 Sumário
+- [Como executar o projeto localmente](#como-executar-o-projeto-localmente)
+  - [Pré-requisitos](#pré-requisitos)
+  - [Passo a passo de instalação](#passo-1-clonar-o-repositório)
+  - [Como criar ou promover um Administrador](#passo-6-criar-uma-conta-e-acessar)
+- [Especificação de Requisitos de Software (SRS)](#especificação-de-requisitos-de-software)
+  - [1. Introdução](#1-introdução)
+  - [2. Descrição global](#2-descrição-global)
+  - [3. Requisitos do sistema](#3-requisitos-do-sistema)
+    - [Requisitos Funcionais](#31-requisitos-funcionais)
+    - [Requisitos Não Funcionais](#32-requisitos-não-funcionais)
+    - [Regras de Negócio](#33-regras-de-negócio)
+- [4. Estruturação do banco de dados](#4-estruturação-do-banco-de-dados)
+- [5. Diagramas](#5-diagramas)
+  - [Diagrama de Entidade-Relacionamento (DER)](#51-diagrama-de-entidade-relacionamento-der)
+  - [Diagrama de Casos de Uso](#52-diagrama-de-casos-de-uso)
+  - [Diagrama de Classes Conceitual](#53-diagrama-de-classes-conceitual)
+  - [Diagrama de Fluxo de Inscrição](#54-diagrama-de-fluxo-de-inscrição-em-curso)
+
+---
+
 ## Como executar o projeto localmente
 
 Para executar a aplicação localmente, é necessário ter PHP e PostgreSQL instalados.
@@ -57,14 +78,14 @@ Em uma instalação existente, prefira aplicar somente a migração do fluxo edu
 psql -U postgres -d hightech_school -f database/migrations/20261002_learning_flow.sql
 ```
 
-Esse comando pede ao PostgreSQL para conectar ao banco `hightech_school` como o usuário `postgres` e executar o arquivo SQL. Se o seu banco ou usuário tiver outro nome, troque esses valores pelo que você usa no pgAdmin. No computador usado durante o desenvolvimento, o comando `psql` não está instalado no PATH; por isso, o método pelo pgAdmin abaixo é a opção mais simples.
+Esse comando pede ao PostgreSQL para conectar ao banco `hightech_school` como o usuário `postgres` e executar o arquivo SQL. Se o seu banco ou usuário tiver outro nome, troque esses valores pelo que você usa no pgAdmin.
 
 #### Aplicar pelo pgAdmin
 
 1. Abra o **pgAdmin** e conecte-se ao servidor PostgreSQL.
 2. No navegador à esquerda, expanda **Servers → seu servidor → Databases** e clique uma vez no banco da aplicação (por exemplo, `hightech_school`). Confirme que selecionou o banco certo antes de executar qualquer script.
 3. Clique com o botão direito nesse banco e escolha **Query Tool**.
-4. No Query Tool, use **Open File** e selecione `database/migrations/20261002_learning_flow.sql` dentro da pasta do projeto. O caminho neste computador é `C:\Users\I1D46A\Documents\workspace\hightech\database\migrations\20261002_learning_flow.sql`.
+4. No Query Tool, use **Open File** e selecione o arquivo `database/migrations/20261002_learning_flow.sql` dentro da pasta do projeto.
 5. Confira que o Query Tool continua conectado ao banco da aplicação e pressione **F5** (ou clique no botão **Execute**).
 6. O painel de mensagens deve indicar que os comandos `CREATE TABLE` foram executados. Esse arquivo só cria as tabelas novas — não apaga nem recarrega os dados de cursos, alunos ou matrículas.
 7. Para confirmar, execute esta consulta no mesmo Query Tool:
@@ -112,9 +133,13 @@ ON CONFLICT (id_curso, ordem) DO NOTHING;
 
 ### Passo 4: Configurar a conexão PHP
 
-Abra `database/connect.php` e ajuste as variáveis `$host`, `$dbname`, `$user` e `$pass` para o seu ambiente PostgreSQL. O nome informado em `$dbname` deve corresponder ao banco criado no passo anterior.
+A aplicação lê as configurações em `database/connect.php`. Você pode definir variáveis de ambiente no seu sistema ou ajustar diretamente as variáveis no arquivo:
 
-Não publique credenciais reais no repositório nem as reutilize em ambientes de produção. Para uma implantação real, prefira carregar os dados de conexão de variáveis de ambiente ou de um arquivo de configuração que não seja versionado.
+- `DB_HOST`: Endereço do servidor PostgreSQL (padrão: `192.168.10.52` ou `localhost`).
+- `DB_PORT`: Porta do servidor (padrão: `5432`).
+- `DB_NAME`: Nome da base de dados (padrão: `hightech_school`).
+- `DB_USER`: Usuário do banco (padrão: `admin` ou `postgres`).
+- `DB_PASS`: Senha do usuário do banco.
 
 Confirme que os módulos necessários estão habilitados:
 
@@ -142,9 +167,15 @@ O `index.php` redireciona para `portal_empresa.php`.
 
 ### Passo 6: Criar uma conta e acessar
 
-Use a opção **Cadastrar-se** para criar uma conta de aluno. O formulário cria uma conta de usuário e tenta criar também o registro acadêmico correspondente.
+1. Acesse `http://localhost:8000/login/cadastrar.php` e use a opção **Cadastrar-se** para criar uma conta de aluno. O formulário cria a conta de usuário e o registro acadêmico correspondente.
+2. Por padrão, todas as contas criadas pelo formulário público recebem o perfil `aluno`.
+3. **Para promover um usuário a Administrador**, execute no pgAdmin ou psql:
 
-O projeto não fornece credenciais padrão nem cria um administrador durante a carga do esquema. Para testar as telas administrativas, é necessário cadastrar ou promover de forma autorizada uma conta existente para o perfil `admin` no banco de dados. Não use credenciais de demonstração em um ambiente público.
+```sql
+UPDATE usuarios SET perfil = 'admin' WHERE email = 'seu_email@exemplo.com';
+```
+
+Com o perfil `admin`, novos menus de gestão serão liberados no cabeçalho: **Gestão Alunos**, **Gestão Cursos**, **Gestão de Aulas**, **Gestão de Provas** e **Matrículas**.
 
 ---
 
@@ -240,12 +271,6 @@ O cadastro público cria contas com o perfil `aluno`. O perfil `admin` precisa s
 | **RF14** | Painel individual do aluno | O sistema deve permitir que um aluno autenticado consulte seus cursos e a carga horária total exibida no painel. | Média |
 | **RF15** | Perfil profissional | O sistema deve permitir que o aluno crie ou atualize seu título profissional, biografia, links, habilidades e disponibilidade pública. | Média |
 | **RF16** | Matrícula rápida | O painel do aluno deve permitir o envio de solicitação de matrícula em outro curso. | Média |
-| **RF21** | Acesso às aulas | O sistema deve liberar o conteúdo de um curso somente para aluno autenticado com matrícula ativa nesse curso. | Alta |
-| **RF22** | Registro de progresso | O sistema deve permitir que o aluno marque como concluída uma aula ativa do curso em que está matriculado e exibir seu progresso no painel. | Alta |
-| **RF23** | Gestão de aulas | O sistema deve permitir que administradores cadastrem, editem, ordenem, publiquem e ocultem aulas e seus links de material por curso. | Alta |
-| **RF24** | Gestão de prova | O sistema deve permitir que administradores configurem a nota mínima, o limite de tentativas, o estado da prova e questões de múltipla escolha por curso. | Alta |
-| **RF25** | Realização de prova | O sistema deve liberar a prova a alunos com matrícula ativa após a conclusão das aulas obrigatórias, corrigir as respostas no servidor e registrar a nota. | Alta |
-| **RF26** | Certificado verificável | O sistema deve emitir um código único após aprovação e permitir visualizar, imprimir e validar publicamente o certificado. | Alta |
 
 #### Módulo de talentos e oportunidades
 
@@ -255,6 +280,17 @@ O cadastro público cria contas com o perfil `aluno`. O perfil `admin` precisa s
 | **RF18** | Busca de talentos | O sistema deve permitir filtrar a vitrine por nome, título profissional ou habilidades. | Média |
 | **RF19** | Mural de vagas | O sistema deve listar vagas ativas com informações de empresa, modalidade, contrato e candidatura. | Média |
 | **RF20** | Filtro de vagas | O sistema deve permitir filtrar as vagas por modalidade de trabalho. | Média |
+
+#### Módulo de aulas, avaliações e certificação
+
+| ID | Título | Descrição | Prioridade |
+| --- | --- | --- | --- |
+| **RF21** | Acesso às aulas | O sistema deve liberar o conteúdo de um curso somente para aluno autenticado com matrícula ativa nesse curso. | Alta |
+| **RF22** | Registro de progresso | O sistema deve permitir que o aluno marque como concluída uma aula ativa do curso em que está matriculado e exibir seu progresso no painel. | Alta |
+| **RF23** | Gestão de aulas | O sistema deve permitir que administradores cadastrem, editem, ordenem, publiquem e ocultem aulas e seus links de material por curso. | Alta |
+| **RF24** | Gestão de prova | O sistema deve permitir que administradores configurem a nota mínima, o limite de tentativas, o estado da prova e questões de múltipla escolha por curso. | Alta |
+| **RF25** | Realização de prova | O sistema deve liberar a prova a alunos com matrícula ativa após a conclusão das aulas obrigatórias, corrigir as respostas no servidor e registrar a nota. | Alta |
+| **RF26** | Certificado verificável | O sistema deve emitir um código único após aprovação e permitir visualizar, imprimir e validar publicamente o certificado. | Alta |
 
 ### 3.2 Requisitos não funcionais
 

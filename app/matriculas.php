@@ -12,17 +12,23 @@ require_once __DIR__ . '/../includes/functions.php';
 // Variável que armazenará mensagens de feedback para o usuário (sucesso, erro ou aviso)
 $mensagem = '';
 
-/* BLOCO DE EXCLUSÃO / CANCELAMENTO DE MATRÍCULA */
-// Verifica se a URL contém ?action=delete&id=X — indica que o usuário clicou em "Cancelar"
-// Cancelar uma matrícula equivale a excluir o vínculo entre o aluno e o curso na tabela intermediária
-if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
-    // Chama a função que executa o DELETE na tabela de matrículas usando o ID do registro
-    if (excluirMatricula($conexao, $_GET['id'])) {
-        // Se o cancelamento foi bem-sucedido, exibe mensagem verde de confirmação
-        $mensagem = '<div class="alert alert-success">Matrícula cancelada com sucesso!</div>';
+// Inicializa o token CSRF de sessão para proteger operações da tela de matrículas
+if (empty($_SESSION['csrf_matriculas'])) {
+    $_SESSION['csrf_matriculas'] = bin2hex(random_bytes(32));
+}
+
+/* BLOCO DE CANCELAMENTO / EXCLUSÃO DE MATRÍCULA (SEGURO VIA POST COM CSRF) */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'cancelar') {
+    $token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_matriculas'], (string)$token)) {
+        $mensagem = '<div class="alert alert-danger">Falha na validação de segurança (token expirado). Tente novamente.</div>';
     } else {
-        // Se houve erro no banco de dados, exibe mensagem vermelha de falha
-        $mensagem = '<div class="alert alert-danger">Erro ao cancelar matrícula.</div>';
+        $id_cancelar = filter_var($_POST['id'] ?? '', FILTER_VALIDATE_INT);
+        if ($id_cancelar && excluirMatricula($conexao, $id_cancelar)) {
+            $mensagem = '<div class="alert alert-success">Matrícula cancelada com sucesso!</div>';
+        } else {
+            $mensagem = '<div class="alert alert-danger">Erro ao cancelar matrícula.</div>';
+        }
     }
 }
 
@@ -215,9 +221,13 @@ $matriculas = listarMatriculas($conexao);
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <!-- Link para cancelar matrícula: o onclick pede confirmação antes de agir -->
-                                    <!-- Cancelar remove o vínculo aluno-curso da tabela intermediária -->
-                                    <a href="matriculas.php?action=delete&id=<?php echo $mat['id']; ?>" onclick="return confirm('Tem certeza que deseja cancelar esta matrícula?');" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;">Cancelar</a>
+                                    <!-- Formulário POST seguro para cancelar matrícula com proteção CSRF -->
+                                    <form action="matriculas.php" method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja cancelar esta matrícula?');">
+                                        <input type="hidden" name="acao" value="cancelar">
+                                        <input type="hidden" name="id" value="<?php echo (int) $mat['id']; ?>">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_matriculas'], ENT_QUOTES, 'UTF-8'); ?>">
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.85rem; cursor: pointer;">Cancelar</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

@@ -1,18 +1,16 @@
 <?php
-// Define o endereço do servidor PostgreSQL usado pela aplicação.
-$host = "192.168.10.52";
-// Define o nome do banco de dados que contém as tabelas do sistema.
-$dbname = "hightech_school";
-// Informa o usuário que será usado na autenticação com o PostgreSQL.
-$user = "admin";
-// Informa a senha correspondente ao usuário do banco de dados.
-$pass = "admin123";
+// Define as credenciais do PostgreSQL com suporte a variáveis de ambiente ou valores padrão.
+$host = getenv('DB_HOST') ?: "192.168.10.52";
+$port = getenv('DB_PORT') ?: "5432";
+$dbname = getenv('DB_NAME') ?: "hightech_school";
+$user = getenv('DB_USER') ?: "admin";
+$pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : "admin123";
 
 // Tenta abrir a conexão para que o restante do sistema possa consultar o banco.
 try {
     // Cria uma conexão PDO usando o driver PostgreSQL e os dados definidos acima.
     $conexao = new PDO(
-        "pgsql:host=$host;dbname=$dbname",
+        "pgsql:host=$host;port=$port;dbname=$dbname",
         $user,
         $pass,
         [

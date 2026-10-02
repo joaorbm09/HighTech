@@ -14,16 +14,23 @@ $mensagem = '';
 // Variável que guarda os dados do aluno quando estamos no modo de edição; null = modo cadastro
 $aluno_edicao = null;
 
-/* BLOCO DE EXCLUSÃO DE ALUNO */
-// Verifica se a URL contém ?action=delete&id=X — indica que o usuário clicou em "Excluir"
-if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
-    // Chama a função que executa o DELETE no banco de dados passando a conexão e o ID do aluno
-    if (excluirAluno($conexao, $_GET['id'])) {
-        // Se a exclusão foi bem-sucedida, exibe mensagem verde de confirmação
-        $mensagem = '<div class="alert alert-success">Aluno excluído com sucesso!</div>';
+// Inicializa o token CSRF de sessão para proteger operações da tela de alunos
+if (empty($_SESSION['csrf_alunos'])) {
+    $_SESSION['csrf_alunos'] = bin2hex(random_bytes(32));
+}
+
+/* BLOCO DE EXCLUSÃO DE ALUNO (SEGURO VIA POST COM CSRF) */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'excluir') {
+    $token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_alunos'], (string)$token)) {
+        $mensagem = '<div class="alert alert-danger">Falha na validação de segurança (token expirado). Tente novamente.</div>';
     } else {
-        // Se houve erro no banco de dados, exibe mensagem vermelha de falha
-        $mensagem = '<div class="alert alert-danger">Erro ao excluir aluno.</div>';
+        $id_excluir = filter_var($_POST['id'] ?? '', FILTER_VALIDATE_INT);
+        if ($id_excluir && excluirAluno($conexao, $id_excluir)) {
+            $mensagem = '<div class="alert alert-success">Aluno excluído com sucesso!</div>';
+        } else {
+            $mensagem = '<div class="alert alert-danger">Erro ao excluir aluno. Verifique restrições no banco de dados.</div>';
+        }
     }
 }
 
@@ -249,9 +256,13 @@ $alunos = listarAlunos($conexao);
                                 <td>
                                     <!-- Link para editar: passa action=edit e o ID do aluno via GET -->
                                     <a href="alunos.php?action=edit&id=<?php echo $aluno['id']; ?>" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;">Editar</a>
-                                    <!-- Link para excluir: o onclick pede confirmação antes de enviar a requisição -->
-                                    <!-- Isso evita exclusões acidentais por um clique sem querer -->
-                                    <a href="alunos.php?action=delete&id=<?php echo $aluno['id']; ?>" onclick="return confirm('Tem certeza que deseja excluir este aluno?');" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;">Excluir</a>
+                                    <!-- Formulário POST seguro para exclusão com proteção CSRF -->
+                                    <form action="alunos.php" method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este aluno?');">
+                                        <input type="hidden" name="acao" value="excluir">
+                                        <input type="hidden" name="id" value="<?php echo (int) $aluno['id']; ?>">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_alunos'], ENT_QUOTES, 'UTF-8'); ?>">
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.85rem; cursor: pointer;">Excluir</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
