@@ -55,13 +55,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     // Captura a turma do aluno (campo opcional)
     $turma = $_POST['turma'] ?? '';
-    // Captura a data de nascimento selecionada (campo opcional)
-    $nasc = $_POST['nasc'] ?? '';
-    // Captura o status ativo/inativo; por padrão assume 'true' (ativo)
-    $ativo = $_POST['ativo'] ?? 'true';
+    // Valida a data de nascimento se informada (14 a 100 anos, sem datas futuras)
+    $nasc_raw = trim($_POST['nasc'] ?? '');
+    $nasc_erro = '';
+    $nasc = validarDataNascimento($nasc_raw, $nasc_erro);
 
     // Valida os campos obrigatórios: Nome e E-mail não podem estar vazios
-    if (!empty($nome) && !empty($email)) {
+    if ($nasc === false) {
+        $mensagem = '<div class="alert alert-warning">⚠️ ' . htmlspecialchars($nasc_erro) . '</div>';
+    } else if (!empty($nome) && !empty($email)) {
         // Se $id existe, estamos editando um aluno já cadastrado
         if ($id) {
             // Chama a função de UPDATE passando todos os campos atualizados
@@ -93,6 +95,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 /* BUSCA FINAL DA LISTA DE ALUNOS */
 // Recupera todos os alunos do banco para exibir na tabela abaixo do formulário
 $alunos = listarAlunos($conexao);
+
+// Limites etários: idade entre 14 e 100 anos, impedindo datas futuras e anos irreais
+$data_max_nasc = date('Y-m-d', strtotime('-14 years'));
+$data_min_nasc = date('Y-m-d', strtotime('-100 years'));
 ?>
 
 <!DOCTYPE html>
@@ -167,11 +173,12 @@ $alunos = listarAlunos($conexao);
                         <input type="text" name="turma" id="turma" value="<?php echo htmlspecialchars($aluno_edicao['turma'] ?? ''); ?>">
                     </div>
 
-                    <!-- Campo: Data de Nascimento (opcional — útil para relatórios e faixa etária) -->
+                    <!-- Campo: Data de Nascimento (opcional — restrição de 14 a 100 anos) -->
                     <div class="form-group">
                         <label for="nasc">Nascimento:</label>
-                        <!-- type="date" exibe um seletor de data nativo do navegador -->
-                        <input type="date" name="nasc" id="nasc" value="<?php echo htmlspecialchars($aluno_edicao['nascimento'] ?? ''); ?>">
+                        <!-- Campo com restrição de idade mínima de 14 anos e máxima de 100 anos -->
+                        <input type="date" name="nasc" id="nasc" min="<?php echo $data_min_nasc; ?>" max="<?php echo $data_max_nasc; ?>" value="<?php echo htmlspecialchars($aluno_edicao['nascimento'] ?? ''); ?>">
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">Idade mínima: 14 anos.</small>
                     </div>
 
                     <!-- Campo: Status Ativo (controla se o aluno aparece como ativo ou inativo) -->

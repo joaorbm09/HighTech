@@ -41,8 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Cria a conta com o perfil padrão de aluno, depois associa o cadastro acadêmico.
         if (cadastrarUsuario($conexao, $nome, $email, $senha, 'aluno')) {
-            // Insere também na tabela de alunos se não existir
-            cadastrarAluno($conexao, $nome, null, $email, 'HT-2026', date('Y-m-d'), true);
+            // Insere também na tabela de alunos se não existir (nascimento null até ser informado)
+            cadastrarAluno($conexao, $nome, null, $email, 'HT-2026', null, true);
             
             header("Location: login.php?sucesso=cadastrado");
             exit;

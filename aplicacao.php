@@ -36,12 +36,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['inscrever'])) {
     // Define a turma padrão — todos inscritos por este formulário entram na turma HT-2026
     $turma = 'HT-2026';
 
-    // Data de nascimento: usa o que o aluno enviou ou a data atual como fallback
-    $nasc = $_POST['nasc'] ?? date('Y-m-d');
+    // Validação da data de nascimento: opcional, mas se informada exige entre 14 e 100 anos
+    $nasc_input = trim($_POST['nasc'] ?? '');
+    $nasc_erro = '';
+    $nasc = validarDataNascimento($nasc_input, $nasc_erro);
 
     /* VALIDAÇÃO BÁSICA — Garante que os campos obrigatórios foram preenchidos antes de prosseguir */
 
-    if (!$conexao) {
+    if ($nasc === false) {
+        $mensagem = '<div class="alert alert-warning">⚠️ ' . htmlspecialchars($nasc_erro) . '</div>';
+    } else if (!$conexao) {
         $mensagem = '<div class="alert alert-danger">⚠️ Sem conexão com o banco de dados. Tente novamente mais tarde.</div>';
     } else if (!empty($nome) && !empty($email) && !empty($id_curso)) {
 
@@ -91,6 +95,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['inscrever'])) {
 
 // Chama a função que retorna a lista de cursos cadastrados no banco (usada nos cards e no select)
 $cursos = listarCursos($conexao);
+
+// Limites etários: idade entre 14 e 100 anos, impedindo datas futuras e anos irreais
+$data_max_nasc = date('Y-m-d', strtotime('-14 years'));
+$data_min_nasc = date('Y-m-d', strtotime('-100 years'));
 ?>
 
 <!-- Início da estrutura HTML da página pública da escola. -->
@@ -207,11 +215,12 @@ $cursos = listarCursos($conexao);
                         <input type="email" name="email" id="email" required value="<?php echo htmlspecialchars($usuario_logado['email'] ?? ''); ?>" placeholder="seu@email.com">
                     </div>
 
-                    <!-- Data de nascimento opcional enviada junto com os dados da inscrição. -->
+                    <!-- Data de nascimento opcional enviada junto com os dados da inscrição (14 a 100 anos). -->
                     <div class="form-group">
                         <label for="nasc">Data de Nascimento:</label>
-                        <!-- Campo de data nativo do HTML5 com calendário embutido no navegador -->
-                        <input type="date" name="nasc" id="nasc">
+                        <!-- Campo com restrição de idade mínima de 14 anos e máxima de 100 anos -->
+                        <input type="date" name="nasc" id="nasc" min="<?php echo $data_min_nasc; ?>" max="<?php echo $data_max_nasc; ?>" value="<?php echo htmlspecialchars($_POST['nasc'] ?? ''); ?>">
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">Idade mínima: 14 anos.</small>
                     </div>
 
                     <!-- O seletor de curso ocupa as duas colunas e envia o ID escolhido ao servidor. -->

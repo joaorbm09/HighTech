@@ -15,7 +15,7 @@ $aluno = buscarAlunoPorEmail($conexao, $usuario['email']);
 
 // Se o aluno ainda não existir na tabela alunos, cria automaticamente
 if (!$aluno && $conexao) {
-    cadastrarAluno($conexao, $usuario['nome'], null, $usuario['email'], 'HT-2026', date('Y-m-d'), true);
+    cadastrarAluno($conexao, $usuario['nome'], null, $usuario['email'], 'HT-2026', null, true);
     $aluno = buscarAlunoPorEmail($conexao, $usuario['email']);
 }
 

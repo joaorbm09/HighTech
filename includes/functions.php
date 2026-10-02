@@ -1662,4 +1662,71 @@ function obterMetricasDashboard($conexao) {
     // Devolve o conjunto de métricas calculado ou parcialmente preenchido.
     return $metricas;
 }
+
+/**
+ * Valida a data de nascimento garantindo idade entre 14 e 100 anos, sem permitir datas futuras.
+ * Retorna a data no formato Y-m-d, null se estiver vazia (campo opcional), ou false em caso de erro.
+ */
+function validarDataNascimento($data_string, &$mensagem_erro = null) {
+    $data_limpa = trim((string)$data_string);
+    if ($data_limpa === '') {
+        return null;
+    }
+
+    $d = DateTime::createFromFormat('Y-m-d', $data_limpa);
+    $hoje = new DateTime('today');
+
+    if (!$d || $d->format('Y-m-d') !== $data_limpa) {
+        $mensagem_erro = 'Por favor, informe uma data de nascimento válida no formato dd/mm/aaaa.';
+        return false;
+    }
+
+    if ($d > $hoje) {
+        $mensagem_erro = 'A data de nascimento não pode estar no futuro.';
+        return false;
+    }
+
+    $idade = $hoje->diff($d)->y;
+
+    if ($idade < 14) {
+        $mensagem_erro = 'O aluno deve ter no mínimo 14 anos para se matricular (idade calculada: ' . $idade . ' anos).';
+        return false;
+    }
+
+    if ($idade > 100) {
+        $mensagem_erro = 'Por favor, informe uma data de nascimento válida (idade máxima permitida: 100 anos).';
+        return false;
+    }
+
+    return $data_limpa;
+}
+
+/**
+ * Normaliza URLs externas (LinkedIn, GitHub, etc.) garantindo o protocolo https:// caso o usuário tenha omitido.
+ */
+function normalizarUrlExterna($url) {
+    $url_limpa = trim((string)$url);
+    if ($url_limpa === '') {
+        return '';
+    }
+    if (!preg_match('/^https?:\/\//i', $url_limpa)) {
+        return 'https://' . $url_limpa;
+    }
+    return $url_limpa;
+}
+
+/**
+ * Normaliza e formata o CPF. Se informado apenas com 11 dígitos, formata automaticamente como 000.000.000-00.
+ * Limita a no máximo 14 caracteres para respeitar a coluna VARCHAR(14) do banco de dados.
+ */
+function formatarOuLimparCpf($cpf) {
+    if (empty($cpf) || trim((string)$cpf) === '') {
+        return null;
+    }
+    $nums = preg_replace('/\D/', '', (string)$cpf);
+    if (strlen($nums) === 11) {
+        return vsprintf('%s%s%s.%s%s%s.%s%s%s-%s%s', str_split($nums));
+    }
+    return substr(trim((string)$cpf), 0, 14);
+}
 ?>

@@ -342,10 +342,6 @@ O cadastro público cria contas com o perfil `aluno`. O perfil `admin` precisa s
 | **RN08** | Exclusão em cascata | A exclusão de aluno ou curso remove do banco os registros de matrícula associados; a exclusão de aluno também remove seu perfil de talento. |
 | **RN09** | Perfil de talento por aluno | Cada aluno pode ter no máximo um perfil de talento, conforme a restrição única de `perfil_talento.id_aluno`. |
 | **RN10** | Visibilidade de talentos | A vitrine pública inclui apenas perfis com `disponivel_mercado = true` pertencentes a alunos ativos. |
-| **RN15** | Liberação da prova | A prova ativa só pode ser realizada com matrícula ativa e após concluir todas as aulas obrigatórias que estejam publicadas. |
-| **RN16** | Aprovação | A nota da prova é calculada no servidor e deve atingir ou superar a nota mínima configurada para o curso. |
-| **RN17** | Limite de tentativas | A prova impede novas tentativas depois de atingir o limite configurado, entre 1 e 20 tentativas. |
-| **RN18** | Emissão única | Cada matrícula aprovada recebe um único certificado com código aleatório para validação pública. |
 
 #### Módulo corporativo e de oportunidades
 
@@ -355,6 +351,16 @@ O cadastro público cria contas com o perfil `aluno`. O perfil `admin` precisa s
 | **RN12** | Exibição de vagas | A listagem pública apresenta somente vagas ativas por padrão. |
 | **RN13** | Candidatura | O contato de candidatura pode ser exibido como endereço de e-mail ou como link fornecido no cadastro da vaga. |
 | **RN14** | CPF opcional e único quando informado | O CPF pode ficar vazio; quando informado, o índice parcial impede repetições entre valores não nulos. |
+
+#### Módulo de aulas, avaliações e dados do aluno
+
+| ID | Título | Regra / condição |
+| --- | --- | --- |
+| **RN15** | Liberação da prova | A prova ativa só pode ser realizada com matrícula ativa e após concluir todas as aulas obrigatórias que estejam publicadas. |
+| **RN16** | Aprovação | A nota da prova é calculada no servidor e deve atingir ou superar a nota mínima configurada para o curso. |
+| **RN17** | Limite de tentativas | A prova impede novas tentativas depois de atingir o limite configurado, entre 1 e 20 tentativas. |
+| **RN18** | Emissão única | Cada matrícula aprovada recebe um único certificado com código aleatório para validação pública. |
+| **RN19** | Faixa etária do aluno | A data de nascimento, quando informada, deve corresponder a uma idade entre 14 e 100 anos, rejeitando datas futuras ou incompatíveis com o público da escola. |
 
 ---
 
