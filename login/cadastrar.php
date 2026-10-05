@@ -13,6 +13,11 @@ $mensagem = '';
 $nome = '';
 $email = '';
 
+// Token CSRF para proteger a criação de contas contra requisições externas.
+if (empty($_SESSION['csrf_cadastro'])) {
+    $_SESSION['csrf_cadastro'] = bin2hex(random_bytes(32));
+}
+
 // Detecta indisponibilidade do banco antes que o formulário seja enviado.
 if (!$conexao) {
     $mensagem = '<div class="alert alert-danger">⚠️ Sem conexão com o banco de dados PostgreSQL.</div>';
@@ -26,6 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Senhas não recebem trim para não alterar caracteres digitados pelo usuário.
     $senha = $_POST['senha'] ?? '';
     $confirmar_senha = $_POST['confirmar_senha'] ?? '';
+    $csrf_token = $_POST['csrf_token'] ?? '';
+
+    if (!is_string($csrf_token) || !hash_equals($_SESSION['csrf_cadastro'], $csrf_token)) {
+        $mensagem = '<div class="alert alert-danger">Falha na validação de segurança. Atualize a página e tente novamente.</div>';
+    }
 
     // Verifica os campos obrigatórios antes de fazer qualquer consulta ou gravação.
     if (empty($nome) || empty($email) || empty($senha)) {
