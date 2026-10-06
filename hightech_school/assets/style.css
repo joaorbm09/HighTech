@@ -1,0 +1,278 @@
+/* Cores e efeitos compartilhados por todo o site. */
+:root {
+    --primary: #185abc;
+    --text-heading: #243447;
+    --text-muted: #5c6770;
+    --border-color: #d7dde3;
+    --bg-main: #f4f6f8;
+    --shadow-lg: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* Regras básicas para manter medidas e tipografia consistentes. */
+* {
+    box-sizing: border-box;
+}
+
+/* Estrutura principal e navegação do site. */
+body {
+    margin: 0;
+    background: #f4f6f8;
+    color: #263238;
+    font-family: Arial, sans-serif;
+    line-height: 1.5;
+}
+
+a {
+    color: #185abc;
+}
+
+.container {
+    width: min(1100px, 94%);
+    margin: 0 auto;
+}
+
+.site-header {
+    padding: 18px 0;
+    background: #243447;
+    color: #fff;
+}
+
+.brand {
+    color: #fff;
+    font-size: 1.35rem;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.site-nav {
+    background: #fff;
+    border-bottom: 1px solid #d7dde3;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.nav-links a {
+    padding: 4px 0;
+    text-decoration: none;
+}
+
+.nav-user {
+    margin-left: auto;
+}
+
+/* Larguras, cartões e grades usados no conteúdo das páginas. */
+main.container {
+    min-height: calc(100vh - 190px);
+    padding-top: 28px;
+    padding-bottom: 40px;
+}
+
+h1, h2, h3 {
+    color: #243447;
+    line-height: 1.25;
+}
+
+h2 {
+    margin: 0 0 8px;
+}
+
+.admin-card, .card, .stat-card {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #d7dde3;
+    border-radius: 5px;
+}
+
+.admin-card {
+    margin: 20px 0;
+}
+
+.grid, .stat-grid, .form-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.hero {
+    margin: 20px 0;
+    padding: 24px;
+    border: 1px solid #d7dde3;
+    border-radius: 5px;
+    background: #fff;
+}
+
+.section-header {
+    margin-bottom: 16px;
+}
+
+.stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    margin: 20px 0;
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.stat-label, .muted, small {
+    color: #5c6770;
+}
+
+/* Campos e botões dos formulários. */
+.form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #aeb8c2;
+    border-radius: 4px;
+    font: inherit;
+}
+
+input[type="checkbox"], input[type="radio"] {
+    width: auto;
+}
+
+textarea {
+    min-height: 90px;
+}
+
+.btn, button {
+    display: inline-block;
+    padding: 9px 14px;
+    border: 1px solid #185abc;
+    border-radius: 4px;
+    background: #185abc;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    text-decoration: none;
+}
+
+.btn-outline {
+    background: #fff;
+    color: #185abc;
+}
+
+.btn-primary {
+    background: #185abc;
+}
+
+.btn-success {
+    border-color: #287a3d;
+    background: #287a3d;
+}
+
+.btn-danger {
+    border-color: #b42318;
+    background: #b42318;
+}
+
+/* Etiquetas e mensagens de status exibidas pelo sistema. */
+.badge {
+    display: inline-block;
+    margin: 3px 4px 3px 0;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: #e9eef3;
+    color: #263238;
+    font-size: 0.9rem;
+}
+
+.badge-success {
+    background: #edf7ef;
+    color: #246b34;
+}
+
+.alert {
+    margin: 16px 0;
+    padding: 12px;
+    border: 1px solid #bdc8d2;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.alert-success {
+    border-color: #85bd91;
+    background: #edf7ef;
+}
+
+.alert-warning {
+    border-color: #e5c76b;
+    background: #fff8df;
+}
+
+.alert-danger {
+    border-color: #d89a9a;
+    background: #fff0f0;
+}
+
+/* Tabelas administrativas e rodapé. */
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.styled-table {
+    margin-top: 12px;
+}
+
+th, td {
+    padding: 9px;
+    border: 1px solid #d7dde3;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background: #edf1f5;
+}
+
+.site-footer {
+    padding: 18px 0;
+    border-top: 1px solid #d7dde3;
+    background: #fff;
+    color: #5c6770;
+    text-align: center;
+}
+
+/* Ajustes de navegação e cartões para telas pequenas. */
+@media (max-width: 600px) {
+    .nav-user {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .admin-card, .card {
+        padding: 14px;
+    }
+}

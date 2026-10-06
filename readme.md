@@ -4,6 +4,10 @@ A **HighTech** é uma aplicação web acadêmica desenvolvida em PHP e PostgreSQ
 
 Por meio da aplicação, visitantes podem conhecer os serviços, consultar cursos e vagas, enviar solicitações corporativas e visualizar perfis profissionais públicos. Alunos podem criar uma conta, acompanhar matrículas, acessar as aulas dos cursos em que possuem matrícula ativa, registrar o progresso, fazer provas e receber certificados verificáveis após a aprovação. Administradores autenticados podem gerenciar alunos, cursos, matrículas, aulas e provas.
 
+Uma versão separada, focada apenas na gestão escolar, está na pasta [hightech_school/](hightech_school/).
+
+Para entender as tags HTML usadas nas telas, consulte a [documentação de tags HTML](docs/html-tags.md).
+
 > Este documento descreve o comportamento e a estrutura presentes no projeto. Recursos mencionados como possibilidades futuras não devem ser considerados implementados.
 
 ---

@@ -1,364 +1,94 @@
 <?php 
-// Carrega a conexão PDO e disponibiliza $conexao para as funções deste arquivo.
 require_once __DIR__ . '/../database/connect.php';
 
-/*FUNÇÕES DE AUTENTICAÇÃO E USUÁRIOS */
-
-/**
- * Cadastra um novo usuário criptografando a senha com password_hash.
- */
+// Cria uma conta guardando a senha como hash, nunca como texto simples.
 function cadastrarUsuario($conexao, $nome, $email, $senha, $perfil = 'aluno') {
-    // Não tenta gravar se a conexão falhou durante a inicialização do sistema.
     if (!$conexao) return false;
     try {
-        // Padroniza o e-mail para evitar cadastros duplicados por diferenças de maiúsculas ou espaços.
         $email_normalizado = strtolower(trim($email));
-        // Transforma a senha em hash; o valor original não é persistido no banco.
         $senha_hash = password_hash($senha, PASSWORD_BCRYPT);
-        // Define os campos a inserir usando parâmetros nomeados para separar SQL de dados.
         $sql = "INSERT INTO usuarios (nome, email, senha, perfil) VALUES (:nome, :email, :senha, :perfil)";
-        // Prepara a instrução para que os valores sejam vinculados com segurança.
         $stmt = $conexao->prepare($sql);
-        // Associa os dados da conta aos parâmetros correspondentes da instrução.
         $stmt->bindParam(":nome", $nome);
         $stmt->bindParam(":email", $email_normalizado);
         $stmt->bindParam(":senha", $senha_hash);
         $stmt->bindParam(":perfil", $perfil);
-        // Executa o INSERT e devolve true ou false conforme o resultado do PDO.
         return $stmt->execute();
     } catch (PDOException $e) {
-        // Registra o erro técnico no log e retorna falha para quem chamou a função.
         error_log("Erro ao cadastrar usuário: " . $e->getMessage());
         return false;
     }
 }
 
-/**
- * Autentica um usuário verificando a senha informada com o hash salvo no banco.
- */
+// Localiza a conta pelo e-mail e confere a senha digitada com o hash salvo.
 function autenticarUsuario($conexao, $email, $senha) {
-    // Sem banco disponível, não há como validar as credenciais.
     if (!$conexao) return false;
     try {
-        // Busca uma conta pelo e-mail sem diferenciar letras maiúsculas de minúsculas.
         $stmt = $conexao->prepare("SELECT * FROM usuarios WHERE LOWER(email) = LOWER(:email)");
-        // Vincula o e-mail recebido ao parâmetro da consulta preparada.
         $stmt->bindParam(":email", $email);
-        // Executa a busca e lê o primeiro registro encontrado.
         $stmt->execute();
         $usuario = $stmt->fetch();
-
-        // Só autentica se a conta existir e a senha digitada corresponder ao hash armazenado.
         if ($usuario && password_verify($senha, $usuario['senha'])) {
             return $usuario;
         }
-        // Retorna false para credenciais incorretas ou usuário inexistente.
         return false;
     } catch (PDOException $e) {
-        // Guarda detalhes do erro no log sem expô-los ao visitante.
         error_log("Erro ao autenticar usuário: " . $e->getMessage());
         return false;
     }
 }
 
-/**
- * Procura uma conta pelo e-mail, sem diferenciar letras maiúsculas de minúsculas.
- * Retorna os dados da conta encontrada ou false quando não há resultado ou conexão.
- */
+// Procura uma conta pelo e-mail para validar cadastros e inscrições.
 function buscarUsuarioPorEmail($conexao, $email) {
-    // Interrompe a busca quando a aplicação não conseguiu conectar ao banco.
     if (!$conexao) return false;
     try {
-        // Pesquisa a conta ignorando caixa alta/baixa e mantendo o e-mail parametrizado.
         $stmt = $conexao->prepare("SELECT * FROM usuarios WHERE LOWER(email) = LOWER(:email)");
         $stmt->bindParam(":email", $email);
-        // Executa a busca e devolve o registro encontrado ou false se não houver correspondência.
         $stmt->execute();
         return $stmt->fetch();
     } catch (PDOException $e) {
-        // Registra a falha para diagnóstico e sinaliza que a consulta não foi concluída.
         error_log("Erro ao buscar usuário: " . $e->getMessage());
         return false;
     }
 }
 
-/* FUNÇÕES DO MÓDULO DE CURSOS*/
 
-/**
- * Lista os cursos cadastrados em ordem crescente de identificador.
- * Retorna uma lista vazia quando a conexão não está disponível ou a consulta falha.
- */
-function listarCursos($conexao) {
-    // Uma lista vazia permite que as páginas tratem a ausência de conexão sem tentar consultar null.
-    if (!$conexao) return [];
-    try {
-        // Busca todos os cursos em ordem de ID para exibi-los de forma estável.
-        $stmt = $conexao->query("SELECT * FROM cursos ORDER BY id ASC");
-        // Converte todas as linhas do resultado em uma lista de arrays associativos.
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
-        // Registra o problema e devolve uma lista vazia para a camada de apresentação.
-        error_log("Erro ao listar cursos: " . $e->getMessage());
-        return [];
-    }
-}
 
-/**
- * Busca um único curso pelo identificador numérico.
- * Retorna os dados do curso ou false se ele não existir ou ocorrer uma falha.
- */
-function buscarCursoPorId($conexao, $id) {
-    // Sem conexão, não é possível localizar o curso.
-    if (!$conexao) return false;
-    try {
-        // Prepara uma busca restrita ao ID recebido, sem concatená-lo no SQL.
-        $stmt = $conexao->prepare("SELECT * FROM cursos WHERE id = :id");
-        // Vincula o ID como inteiro para corresponder à chave primária.
-        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
-        // Executa a consulta e devolve o curso encontrado, se existir.
-        $stmt->execute();
-        return $stmt->fetch();
-    } catch (PDOException $e) {
-        // Registra a falha e retorna false para distinguir de um curso encontrado.
-        error_log("Erro ao buscar curso: " . $e->getMessage());
-        return false;
-    }
-}
 
-/**
- * Insere um curso e converte o status recebido para um booleano do PostgreSQL.
- * Retorna true quando o INSERT é executado e false quando não é possível gravar.
- */
-function cadastrarCurso($conexao, $nome, $categoria, $descricao, $carga_horaria, $ativo = true) {
-    // Confirma a existência da conexão antes de iniciar o cadastro.
-    if (!$conexao) return false;
-    try {
-        // Especifica os campos do curso e reserva parâmetros para os valores fornecidos.
-        $sql = "INSERT INTO cursos (nome, categoria, descricao, carga_horaria, ativo) VALUES (:nome, :categoria, :descricao, :carga_horaria, :ativo)";
-        $stmt = $conexao->prepare($sql);
-        // Vincula os campos textuais e a carga horária à instrução preparada.
-        $stmt->bindParam(":nome", $nome);
-        $stmt->bindParam(":categoria", $categoria);
-        $stmt->bindParam(":descricao", $descricao);
-        $stmt->bindParam(":carga_horaria", $carga_horaria, PDO::PARAM_INT);
-        // Normaliza formatos booleanos vindos de formulários e os envia como booleano SQL.
-        $stmt->bindValue(":ativo", ($ativo === 'true' || $ativo === true || $ativo === 1 || $ativo === '1'), PDO::PARAM_BOOL);
-        // Executa a inserção e informa se ela foi concluída.
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        // Registra detalhes técnicos sem interromper o fluxo da página chamadora.
-        error_log("Erro ao cadastrar curso: " . $e->getMessage());
-        return false;
-    }
-}
 
-/**
- * Atualiza os dados e o status de um curso existente usando parâmetros PDO.
- * Retorna true quando o UPDATE é executado e false quando ocorre uma falha.
- */
-function atualizarCurso($conexao, $id, $nome, $categoria, $descricao, $carga_horaria, $ativo) {
-    // Evita executar o UPDATE caso a conexão não tenha sido estabelecida.
-    if (!$conexao) return false;
-    try {
-        // Atualiza os campos do curso cuja chave primária corresponde ao ID informado.
-        $sql = "UPDATE cursos SET nome = :nome, categoria = :categoria, descricao = :descricao, carga_horaria = :carga_horaria, ativo = :ativo WHERE id = :id";
-        $stmt = $conexao->prepare($sql);
-        // Vincula os novos dados do curso aos respectivos parâmetros SQL.
-        $stmt->bindParam(":nome", $nome);
-        $stmt->bindParam(":categoria", $categoria);
-        $stmt->bindParam(":descricao", $descricao);
-        $stmt->bindParam(":carga_horaria", $carga_horaria, PDO::PARAM_INT);
-        // Normaliza o status ativo para o tipo booleano esperado pelo PostgreSQL.
-        $stmt->bindValue(":ativo", ($ativo === 'true' || $ativo === true || $ativo === 1 || $ativo === '1'), PDO::PARAM_BOOL);
-        // Vincula o identificador inteiro que seleciona o curso a alterar.
-        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
-        // Executa o UPDATE e retorna o resultado da operação.
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        // Registra a falha para diagnóstico e retorna false à página administrativa.
-        error_log("Erro ao atualizar curso: " . $e->getMessage());
-        return false;
-    }
-}
 
-/**
- * Remove o curso identificado pelo ID; restrições de chave estrangeira são respeitadas.
- * Retorna true quando a instrução DELETE é executada e false se houver erro.
- */
-function excluirCurso($conexao, $id) {
-    // Não tenta excluir registros sem uma conexão PDO ativa.
-    if (!$conexao) return false;
-    try {
-        // Prepara a exclusão do curso indicado; as chaves estrangeiras do banco controlam dependências.
-        $stmt = $conexao->prepare("DELETE FROM cursos WHERE id = :id");
-        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
-        // Executa a exclusão e devolve o status para a página chamadora.
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        // Registra, por exemplo, falhas causadas por restrições do banco.
-        error_log("Erro ao excluir curso: " . $e->getMessage());
-        return false;
-    }
-}
 
-/* FUNÇÕES DO MÓDULO DE ALUNOS */
 
-/**
- * Lista todos os alunos em ordem crescente de identificador.
- * Retorna uma lista vazia quando não há conexão ou a consulta falha.
- */
-function listarAlunos($conexao) {
-    // Retorna coleção vazia quando não existe conexão para consulta.
-    if (!$conexao) return [];
-    try {
-        // Busca os alunos cadastrados ordenando pelo identificador.
-        $stmt = $conexao->query("SELECT * FROM alunos ORDER BY id ASC");
-        // Devolve todas as linhas como uma lista que as telas podem percorrer.
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
-        // Registra a falha e mantém o formato de retorno esperado pelas telas de listagem.
-        error_log("Erro ao listar alunos: " . $e->getMessage());
-        return [];
-    }
-}
 
-/**
- * Busca os dados de um aluno pelo ID.
- * Retorna o registro encontrado ou false se não existir ou ocorrer uma falha.
- */
-function buscarAlunoPorId($conexao, $id) {
-    // Interrompe a busca se não houver conexão com o PostgreSQL.
-    if (!$conexao) return false;
-    try {
-        // Prepara uma consulta limitada a um aluno específico.
-        $stmt = $conexao->prepare("SELECT * FROM alunos WHERE id = :id");
-        // Informa ao PDO que o identificador é um inteiro.
-        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
-        // Executa a busca e devolve uma linha ou false se não existir aluno com esse ID.
-        $stmt->execute();
-        return $stmt->fetch();
-    } catch (PDOException $e) {
-        // Registra o erro e informa à página que a busca falhou.
-        error_log("Erro ao buscar aluno: " . $e->getMessage());
-        return false;
-    }
-}
 
-/**
- * Cadastra aluno e transforma CPF ou nascimento vazios em valores SQL NULL.
- * O status recebido é convertido para booleano antes da gravação.
- */
+
+
+
+// Salva os dados acadêmicos básicos de um aluno; campos opcionais vazios ficam nulos.
 function cadastrarAluno($conexao, $nome, $cpf, $email, $turma, $nasc, $ativo = true) {
-    // Confirma que existe uma conexão disponível antes de preparar a gravação.
     if (!$conexao) return false;
     try {
-        // Declara a inserção e nomeia cada coluna para associar os valores por parâmetro.
         $sql = "INSERT INTO alunos (nome, cpf, email, turma, nascimento, ativo) VALUES (:nome, :cpf, :email, :turma, :nascimento, :ativo)";
         $stmt = $conexao->prepare($sql);
-        // Vincula os dados obrigatórios e opcionais do aluno.
         $stmt->bindParam(":nome", $nome);
-        // Converte CPF vazio em null; se houver valor, remove espaços externos.
         $cpf_val = (!empty($cpf) && trim($cpf) !== '') ? trim($cpf) : null;
         $stmt->bindValue(":cpf", $cpf_val, $cpf_val === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":email", $email);
         $stmt->bindParam(":turma", $turma);
-        // Trata a data de nascimento como opcional e grava NULL quando o campo ficou vazio.
         $nasc_val = (!empty($nasc) && trim($nasc) !== '') ? trim($nasc) : null;
         $stmt->bindValue(":nascimento", $nasc_val, $nasc_val === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
-        // Converte valores recebidos como texto ou booleano para o tipo booleano do banco.
         $stmt->bindValue(":ativo", ($ativo === 'true' || $ativo === true || $ativo === 1 || $ativo === '1'), PDO::PARAM_BOOL);
-        // Executa o INSERT e retorna se a gravação teve sucesso.
         return $stmt->execute();
     } catch (PDOException $e) {
-        // Registra o erro técnico e sinaliza falha sem exibir detalhes do banco ao usuário.
         error_log("Erro ao cadastrar aluno: " . $e->getMessage());
         return false;
     }
 }
 
-/**
- * Atualiza os dados de um aluno, mantendo CPF e nascimento como opcionais.
- * Retorna true quando o UPDATE é executado e false se ocorrer uma falha.
- */
-function atualizarAluno($conexao, $id, $nome, $cpf, $email, $turma, $nasc, $ativo) {
-    // Sem conexão, o registro não pode ser atualizado.
-    if (!$conexao) return false;
-    try {
-        // Define a atualização dos campos do aluno identificado pelo ID.
-        $sql = "UPDATE alunos SET nome = :nome, cpf = :cpf, email = :email, turma = :turma, nascimento = :nascimento, ativo = :ativo WHERE id = :id";
-        $stmt = $conexao->prepare($sql);
-        // Prepara os valores informados; CPF e nascimento recebem tratamento opcional logo abaixo.
-        $stmt->bindParam(":nome", $nome);
-        // Remove espaços do CPF e representa ausência do documento com SQL NULL.
-        $cpf_val = (!empty($cpf) && trim($cpf) !== '') ? trim($cpf) : null;
-        $stmt->bindValue(":cpf", $cpf_val, $cpf_val === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
-        $stmt->bindParam(":email", $email);
-        $stmt->bindParam(":turma", $turma);
-        // Remove espaços da data e grava NULL quando o aluno não informou nascimento.
-        $nasc_val = (!empty($nasc) && trim($nasc) !== '') ? trim($nasc) : null;
-        $stmt->bindValue(":nascimento", $nasc_val, $nasc_val === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
-        // Normaliza o status recebido do formulário para um booleano.
-        $stmt->bindValue(":ativo", ($ativo === 'true' || $ativo === true || $ativo === 1 || $ativo === '1'), PDO::PARAM_BOOL);
-        // Usa o ID como inteiro para limitar a alteração ao aluno correto.
-        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
-        // Executa a atualização e devolve o resultado.
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        // Registra a causa técnica da falha para consulta nos logs do servidor.
-        error_log("Erro ao atualizar aluno: " . $e->getMessage());
-        return false;
-    }
-}
 
-/**
- * Remove um aluno pelo identificador; vínculos dependentes seguem as regras do banco.
- * Retorna true quando a instrução DELETE é executada e false se houver erro.
- */
-function excluirAluno($conexao, $id) {
-    // Evita tentativa de DELETE quando o banco está indisponível.
-    if (!$conexao) return false;
-    try {
-        // Monta a exclusão restrita ao ID informado; relações dependentes seguem as regras SQL.
-        $stmt = $conexao->prepare("DELETE FROM alunos WHERE id = :id");
-        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
-        // Executa o DELETE e devolve seu resultado.
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        // Registra erros, inclusive possíveis restrições de integridade referencial.
-        error_log("Erro ao excluir aluno: " . $e->getMessage());
-        return false;
-    }
-}
 
-/* FUNÇÕES DO MÓDULO DE MATRÍCULAS (RELACIONAMENTO RELACIONAL N:N)*/
 
-/**
- * Cria o vínculo entre um aluno e um curso com o status informado.
- * Retorna true quando a matrícula é criada ou false se a conexão/consulta falhar.
- */
-function matricularAluno($conexao, $id_aluno, $id_curso, $status = 'Ativa') {
-    // Matrículas dependem do banco para validar as chaves estrangeiras de aluno e curso.
-    if (!$conexao) return false;
-    try {
-        // Prepara a inserção que cria a relação entre um aluno e um curso.
-        $sql = "INSERT INTO matriculas (id_aluno, id_curso, status) VALUES (:id_aluno, :id_curso, :status)";
-        $stmt = $conexao->prepare($sql);
-        // Vincula os identificadores como inteiros e define o estado inicial do vínculo.
-        $stmt->bindParam(":id_aluno", $id_aluno, PDO::PARAM_INT);
-        $stmt->bindParam(":id_curso", $id_curso, PDO::PARAM_INT);
-        $stmt->bindParam(":status", $status);
-        // Executa a criação da matrícula.
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        // Registra a falha, como ID inexistente ou violação de restrição do banco.
-        error_log("Erro ao matricular aluno: " . $e->getMessage());
-        return false;
-    }
-}
-
-/**
- * Lista cursos ativos em que o aluno ainda não possui uma matrícula ativa.
- */
+// Lista cursos ativos em que o aluno ainda não possui matrícula ativa.
 function listarCursosDisponiveisParaMatricula($conexao, $id_aluno) {
     if (!$conexao) return false;
     try {
@@ -384,9 +114,7 @@ function listarCursosDisponiveisParaMatricula($conexao, $id_aluno) {
     }
 }
 
-/**
- * Matricula um aluno em curso ativo, evitando vínculos ativos duplicados.
- */
+// Confere se o curso aceita matrícula e cria ou reativa a matrícula em uma transação.
 function matricularAlunoEmCursoAtivo($conexao, $id_aluno, $id_curso) {
     if (!$conexao) return 'error';
     try {
@@ -402,18 +130,29 @@ function matricularAlunoEmCursoAtivo($conexao, $id_aluno, $id_curso) {
         }
 
         $existente = $conexao->prepare(
-            "SELECT id FROM matriculas
+            "SELECT id, status FROM matriculas
              WHERE id_aluno = :id_aluno
                AND id_curso = :id_curso
-               AND LOWER(status) = 'ativa'
              LIMIT 1"
         );
         $existente->bindValue(":id_aluno", $id_aluno, PDO::PARAM_INT);
         $existente->bindValue(":id_curso", $id_curso, PDO::PARAM_INT);
         $existente->execute();
-        if ($existente->fetchColumn()) {
+        $matricula = $existente->fetch();
+        if ($matricula) {
+            if (strtolower($matricula['status']) === 'ativa') {
+                $conexao->commit();
+                return 'already_enrolled';
+            }
+
+            $reativar = $conexao->prepare(
+                "UPDATE matriculas
+                 SET status = 'Ativa', data_matricula = CURRENT_DATE
+                 WHERE id = :id"
+            );
+            $reativar->execute(['id' => $matricula['id']]);
             $conexao->commit();
-            return 'already_enrolled';
+            return 'created';
         }
 
         $insert = $conexao->prepare(
@@ -432,246 +171,17 @@ function matricularAlunoEmCursoAtivo($conexao, $id_aluno, $id_curso) {
     }
 }
 
-/**
- * Lista matrículas junto aos nomes, e-mails e categorias relacionados por JOIN.
- * Retorna uma lista vazia se não houver conexão ou a consulta falhar.
- */
-function listarMatriculas($conexao) {
-    // Devolve uma coleção vazia se não for possível consultar o banco.
-    if (!$conexao) return [];
-    try {
-        // Combina matrícula, aluno e curso para exibir uma linha completa por vínculo.
-        $sql = "SELECT m.id, m.data_matricula, m.status, 
-                       a.nome AS aluno_nome, a.email AS aluno_email, a.turma,
-                       c.nome AS curso_nome, c.categoria AS curso_categoria
-                FROM matriculas m
-                JOIN alunos a ON m.id_aluno = a.id
-                JOIN cursos c ON m.id_curso = c.id
-                ORDER BY m.id DESC";
-        // Executa a consulta sem parâmetros externos e lê todas as linhas resultantes.
-        $stmt = $conexao->query($sql);
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
-        // Registra o erro e devolve uma lista vazia para a tela administrativa.
-        error_log("Erro ao listar matrículas: " . $e->getMessage());
-        return [];
-    }
-}
 
-/**
- * Remove uma matrícula pelo seu próprio identificador.
- * Retorna true quando a instrução DELETE é executada e false se houver erro.
- */
-function excluirMatricula($conexao, $id) {
-    // Interrompe a operação quando a conexão não está disponível.
-    if (!$conexao) return false;
-    try {
-        // Prepara o cancelamento do vínculo pelo identificador da própria matrícula.
-        $stmt = $conexao->prepare("DELETE FROM matriculas WHERE id = :id");
-        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
-        // Executa a exclusão e informa seu resultado à página chamadora.
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        // Registra a falha no log do servidor.
-        error_log("Erro ao cancelar matrícula: " . $e->getMessage());
-        return false;
-    }
-}
 
-/* FUNÇÕES DO MODULO B2B (DEMANDAS E SERVIÇOS CORPORATIVOS) */
 
-/**
- * Registra uma solicitação corporativa com status inicial "Pendente".
- * Retorna true quando os dados são inseridos e false se a gravação falhar.
- */
-function cadastrarSolicitacaoEmpresa($conexao, $nome_empresa, $cnpj, $responsavel, $email, $telefone, $tamanho_equipe, $servico_interesse, $mensagem) {
-    // Se não houver conexão, não há como registrar a solicitação recebida pelo portal.
-    if (!$conexao) return false;
-    try {
-        // Prepara o INSERT; o status é definido no SQL para toda nova solicitação iniciar pendente.
-        $sql = "INSERT INTO solicitacoes_empresas (nome_empresa, cnpj, responsavel, email, telefone, tamanho_equipe, servico_interesse, mensagem, status) 
-                VALUES (:nome_empresa, :cnpj, :responsavel, :email, :telefone, :tamanho_equipe, :servico_interesse, :mensagem, 'Pendente')";
-        $stmt = $conexao->prepare($sql);
-        // Associa as informações da empresa e do contato aos parâmetros da consulta.
-        $stmt->bindParam(":nome_empresa", $nome_empresa);
-        $stmt->bindParam(":cnpj", $cnpj);
-        $stmt->bindParam(":responsavel", $responsavel);
-        $stmt->bindParam(":email", $email);
-        $stmt->bindParam(":telefone", $telefone);
-        $stmt->bindParam(":tamanho_equipe", $tamanho_equipe);
-        $stmt->bindParam(":servico_interesse", $servico_interesse);
-        $stmt->bindParam(":mensagem", $mensagem);
-        // Executa a gravação e retorna se foi concluída.
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        // Registra a exceção para diagnóstico técnico e devolve falha para a página.
-        error_log("Erro ao cadastrar solicitação de empresa: " . $e->getMessage());
-        return false;
-    }
-}
 
-/*FUNÇÕES DO MÓDULO DE VAGAS TECH (OPORTUNIDADES DE EMPREGO) */
 
-/**
- * Lista vagas em ordem decrescente de cadastro, filtrando as ativas por padrão.
- * Passe false em $somente_ativas para incluir vagas inativas.
- */
-function listarVagas($conexao, $somente_ativas = true) {
-    // Sem banco disponível, não há vagas para retornar.
-    if (!$conexao) return [];
-    try {
-        // Começa selecionando os campos das vagas; o filtro de status é opcional.
-        $sql = "SELECT * FROM vagas";
-        // Mantém apenas vagas publicadas quando o argumento padrão está ativo.
-        if ($somente_ativas) {
-            $sql .= " WHERE ativa = true";
-        }
-        // Coloca as oportunidades mais novas no início da listagem.
-        $sql .= " ORDER BY id DESC";
-        // Executa a consulta já montada e devolve todas as vagas encontradas.
-        $stmt = $conexao->query($sql);
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
-        // Registra falhas de consulta e mantém o retorno como lista vazia.
-        error_log("Erro ao listar vagas: " . $e->getMessage());
-        return [];
-    }
-}
 
-/* FUNÇÕES DE AULAS E PROGRESSO DO ALUNO */
 
-/**
- * Lista cursos e estados para a página de administração de aulas.
- */
-function listarCursosParaGestaoAulas($conexao) {
-    if (!$conexao) return false;
-    try {
-        $stmt = $conexao->query("SELECT id, nome, ativo FROM cursos ORDER BY nome ASC");
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
-        error_log("Erro ao listar cursos para gestão de aulas: " . $e->getMessage());
-        return false;
-    }
-}
 
-/**
- * Lista as aulas de um curso para a área administrativa, incluindo aulas ocultas.
- */
-function listarAulasDoCursoAdmin($conexao, $id_curso) {
-    if (!$conexao) return false;
-    try {
-        $stmt = $conexao->prepare(
-            "SELECT id, id_curso, titulo, descricao, conteudo, video_url,
-                    ordem, obrigatoria, ativa
-             FROM aulas
-             WHERE id_curso = :id_curso
-             ORDER BY ordem ASC, id ASC"
-        );
-        $stmt->bindValue(":id_curso", $id_curso, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
-        error_log("Erro ao listar aulas para administração: " . $e->getMessage());
-        return false;
-    }
-}
 
-/**
- * Busca uma aula para edição administrativa.
- */
-function buscarAulaPorId($conexao, $id_aula) {
-    if (!$conexao) return null;
-    try {
-        $stmt = $conexao->prepare("SELECT * FROM aulas WHERE id = :id");
-        $stmt->bindValue(":id", $id_aula, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetch();
-    } catch (PDOException $e) {
-        error_log("Erro ao buscar aula: " . $e->getMessage());
-        return null;
-    }
-}
 
-/**
- * Cadastra uma aula e identifica conflito na ordem dentro do mesmo curso.
- */
-function cadastrarAula($conexao, $id_curso, $titulo, $descricao, $conteudo, $video_url, $ordem, $obrigatoria) {
-    if (!$conexao) return 'error';
-    try {
-        $stmt = $conexao->prepare(
-            "INSERT INTO aulas (id_curso, titulo, descricao, conteudo, video_url, ordem, obrigatoria)
-             VALUES (:id_curso, :titulo, :descricao, :conteudo, :video_url, :ordem, :obrigatoria)"
-        );
-        $stmt->bindValue(":id_curso", $id_curso, PDO::PARAM_INT);
-        $stmt->bindValue(":titulo", $titulo);
-        $stmt->bindValue(":descricao", $descricao);
-        $stmt->bindValue(":conteudo", $conteudo);
-        $stmt->bindValue(":video_url", $video_url);
-        $stmt->bindValue(":ordem", $ordem, PDO::PARAM_INT);
-        $stmt->bindValue(":obrigatoria", $obrigatoria, PDO::PARAM_BOOL);
-        $stmt->execute();
-        return 'created';
-    } catch (PDOException $e) {
-        if ($e->getCode() === '23505') return 'order_conflict';
-        error_log("Erro ao cadastrar aula: " . $e->getMessage());
-        return 'error';
-    }
-}
-
-/**
- * Atualiza os dados de uma aula e identifica conflito na ordem dentro do curso.
- */
-function atualizarAula($conexao, $id_aula, $id_curso, $titulo, $descricao, $conteudo, $video_url, $ordem, $obrigatoria) {
-    if (!$conexao) return 'error';
-    try {
-        $stmt = $conexao->prepare(
-            "UPDATE aulas
-             SET id_curso = :id_curso,
-                 titulo = :titulo,
-                 descricao = :descricao,
-                 conteudo = :conteudo,
-                 video_url = :video_url,
-                 ordem = :ordem,
-                 obrigatoria = :obrigatoria
-             WHERE id = :id"
-        );
-        $stmt->bindValue(":id_curso", $id_curso, PDO::PARAM_INT);
-        $stmt->bindValue(":titulo", $titulo);
-        $stmt->bindValue(":descricao", $descricao);
-        $stmt->bindValue(":conteudo", $conteudo);
-        $stmt->bindValue(":video_url", $video_url);
-        $stmt->bindValue(":ordem", $ordem, PDO::PARAM_INT);
-        $stmt->bindValue(":obrigatoria", $obrigatoria, PDO::PARAM_BOOL);
-        $stmt->bindValue(":id", $id_aula, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->rowCount() > 0 ? 'updated' : 'unchanged';
-    } catch (PDOException $e) {
-        if ($e->getCode() === '23505') return 'order_conflict';
-        error_log("Erro ao atualizar aula: " . $e->getMessage());
-        return 'error';
-    }
-}
-
-/**
- * Publica ou oculta uma aula sem apagar o progresso dos alunos.
- */
-function definirAulaAtiva($conexao, $id_aula, $ativa) {
-    if (!$conexao) return false;
-    try {
-        $stmt = $conexao->prepare("UPDATE aulas SET ativa = :ativa WHERE id = :id");
-        $stmt->bindValue(":ativa", $ativa, PDO::PARAM_BOOL);
-        $stmt->bindValue(":id", $id_aula, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->rowCount() > 0;
-    } catch (PDOException $e) {
-        error_log("Erro ao alterar publicação da aula: " . $e->getMessage());
-        return false;
-    }
-}
-
-/**
- * Recupera a avaliação de um curso. Retorna false quando ainda não foi configurada.
- */
+// Busca as configurações da prova de um curso, opcionalmente exigindo que esteja ativa.
 function obterProvaDoCurso($conexao, $id_curso, $somente_ativa = false) {
     if (!$conexao) return null;
     try {
@@ -691,9 +201,7 @@ function obterProvaDoCurso($conexao, $id_curso, $somente_ativa = false) {
     }
 }
 
-/**
- * Salva a nota mínima e o limite de tentativas da prova de um curso.
- */
+// Cria a prova do curso ou atualiza sua nota mínima e limite de tentativas.
 function salvarProvaDoCurso($conexao, $id_curso, $nota_minima, $max_tentativas) {
     if (!$conexao) return false;
     try {
@@ -716,9 +224,7 @@ function salvarProvaDoCurso($conexao, $id_curso, $nota_minima, $max_tentativas) 
     }
 }
 
-/**
- * Publica ou desativa a prova sem remover questões nem resultados já registrados.
- */
+// Publica ou despublica uma prova depois de conferir suas questões e alternativas.
 function definirProvaAtiva($conexao, $id_prova, $ativa) {
     if (!$conexao) return 'error';
     try {
@@ -758,9 +264,7 @@ function definirProvaAtiva($conexao, $id_prova, $ativa) {
     }
 }
 
-/**
- * Lista questões e alternativas para o formulário administrativo.
- */
+// Lista questões e alternativas para a tela de administração, incluindo a correta.
 function listarQuestoesProvaAdmin($conexao, $id_prova) {
     if (!$conexao) return false;
     try {
@@ -804,9 +308,7 @@ function listarQuestoesProvaAdmin($conexao, $id_prova) {
     }
 }
 
-/**
- * Cadastra ou edita questão e suas quatro alternativas em uma transação.
- */
+// Cria ou atualiza uma questão e suas quatro alternativas dentro de uma transação.
 function salvarQuestaoProva($conexao, $id_prova, $id_questao, $enunciado, $ordem, $alternativas, $indice_correto) {
     if (!$conexao) return 'error';
     try {
@@ -872,9 +374,7 @@ function salvarQuestaoProva($conexao, $id_prova, $id_questao, $enunciado, $ordem
     }
 }
 
-/**
- * Remove uma questão da prova indicada.
- */
+// Exclui uma questão que pertence à prova indicada.
 function excluirQuestaoProva($conexao, $id_prova, $id_questao) {
     if (!$conexao) return false;
     try {
@@ -891,9 +391,7 @@ function excluirQuestaoProva($conexao, $id_prova, $id_questao) {
     }
 }
 
-/**
- * Lista prova e alternativas para o aluno sem retornar a resposta correta.
- */
+// Lista questões para o aluno sem revelar qual alternativa está marcada como correta.
 function listarQuestoesProvaAluno($conexao, $id_prova) {
     if (!$conexao) return false;
     try {
@@ -930,9 +428,7 @@ function listarQuestoesProvaAluno($conexao, $id_prova) {
     }
 }
 
-/**
- * Submete e corrige prova no servidor, validando matrícula, pré-requisitos e tentativas.
- */
+// Valida respostas e regras da prova, calcula a nota e registra a tentativa.
 function enviarTentativaProva($conexao, $id_matricula, $id_prova, $respostas) {
     if (!$conexao) return ['status' => 'error'];
     if (!is_array($respostas)) return ['status' => 'invalid_answers'];
@@ -1103,9 +599,7 @@ function enviarTentativaProva($conexao, $id_matricula, $id_prova, $respostas) {
     }
 }
 
-/**
- * Lista tentativas recentes de uma matrícula na prova.
- */
+// Mostra ao aluno o histórico de notas e datas das tentativas feitas.
 function listarTentativasProvaAluno($conexao, $id_matricula, $id_prova) {
     if (!$conexao) return false;
     try {
@@ -1125,9 +619,7 @@ function listarTentativasProvaAluno($conexao, $id_matricula, $id_prova) {
     }
 }
 
-/**
- * Conta aulas obrigatórias ainda pendentes na matrícula.
- */
+// Conta aulas obrigatórias ativas que ainda não foram concluídas pela matrícula.
 function contarAulasObrigatoriasPendentes($conexao, $id_matricula, $id_curso) {
     if (!$conexao) return null;
     try {
@@ -1151,9 +643,7 @@ function contarAulasObrigatoriasPendentes($conexao, $id_matricula, $id_curso) {
     }
 }
 
-/**
- * Busca o certificado associado a uma matrícula.
- */
+// Busca os dados do certificado emitido para uma matrícula específica.
 function obterCertificadoDaMatricula($conexao, $id_matricula) {
     if (!$conexao) return null;
     try {
@@ -1175,9 +665,7 @@ function obterCertificadoDaMatricula($conexao, $id_matricula) {
     }
 }
 
-/**
- * Localiza certificado por código para verificação pública.
- */
+// Confere publicamente um código e devolve os dados do certificado correspondente.
 function validarCertificadoPorCodigo($conexao, $codigo) {
     if (!$conexao) return null;
     try {
@@ -1199,9 +687,7 @@ function validarCertificadoPorCodigo($conexao, $codigo) {
     }
 }
 
-/**
- * Busca a matrícula ativa do aluno no curso solicitado.
- */
+// Busca a matrícula ativa de um aluno em um curso.
 function obterMatriculaAtivaAlunoCurso($conexao, $id_aluno, $id_curso) {
     if (!$conexao) return false;
     try {
@@ -1225,9 +711,7 @@ function obterMatriculaAtivaAlunoCurso($conexao, $id_aluno, $id_curso) {
     }
 }
 
-/**
- * Lista as aulas ativas do curso e indica quais foram concluídas na matrícula.
- */
+// Lista as aulas publicadas do curso e indica quais já foram concluídas.
 function listarAulasDaMatricula($conexao, $id_matricula) {
     if (!$conexao) return false;
     try {
@@ -1252,9 +736,7 @@ function listarAulasDaMatricula($conexao, $id_matricula) {
     }
 }
 
-/**
- * Marca uma aula como concluída somente se ela pertencer à matrícula ativa.
- */
+// Registra a conclusão somente se a aula pertencer ao curso da matrícula ativa.
 function concluirAulaDaMatricula($conexao, $id_matricula, $id_aula) {
     if (!$conexao) return false;
     try {
@@ -1292,38 +774,24 @@ function concluirAulaDaMatricula($conexao, $id_matricula, $id_aula) {
     }
 }
 
-/* FUNÇÕES DO ALUNO & BANCO DE TALENTOS */
-
-/**
- * Procura o registro acadêmico associado ao e-mail informado.
- * A comparação ignora diferenças entre letras maiúsculas e minúsculas.
- */
+// Procura o cadastro acadêmico associado ao e-mail da conta.
 function buscarAlunoPorEmail($conexao, $email) {
-    // Sem conexão, não é possível associar o e-mail a um registro acadêmico.
     if (!$conexao) return false;
     try {
-        // Compara os e-mails sem diferenciar caixa alta/baixa, usando valor parametrizado.
         $stmt = $conexao->prepare("SELECT * FROM alunos WHERE LOWER(email) = LOWER(:email)");
         $stmt->bindParam(":email", $email);
-        // Executa a consulta e devolve o aluno encontrado ou false.
         $stmt->execute();
         return $stmt->fetch();
     } catch (PDOException $e) {
-        // Registra a falha de consulta no log do servidor.
         error_log("Erro ao buscar aluno por email: " . $e->getMessage());
         return false;
     }
 }
 
-/**
- * Lista os cursos e os dados de matrícula de um aluno específico.
- * Retorna uma lista vazia se o aluno não tiver cursos ou a consulta falhar.
- */
+// Monta o painel do aluno com cursos, progresso, tentativas e certificados.
 function listarCursosDoAluno($conexao, $id_aluno) {
-    // Retorna lista vazia se não for possível acessar o banco.
     if (!$conexao) return [];
     try {
-        // Junta matrícula e curso para retornar os detalhes de cada curso do aluno informado.
         $sql = "SELECT m.id AS matricula_id, m.data_matricula, m.status AS matricula_status,
                        c.id AS curso_id, c.nome AS curso_nome, c.categoria, c.descricao, c.carga_horaria,
                        (SELECT COUNT(*) FROM aulas a
@@ -1347,111 +815,17 @@ function listarCursosDoAluno($conexao, $id_aluno) {
                 JOIN cursos c ON m.id_curso = c.id
                 WHERE m.id_aluno = :id_aluno
                 ORDER BY m.id DESC";
-        // Prepara a consulta e vincula o ID do aluno como inteiro.
         $stmt = $conexao->prepare($sql);
         $stmt->bindParam(":id_aluno", $id_aluno, PDO::PARAM_INT);
-        // Executa a busca e coleta todos os cursos associados às matrículas.
         $stmt->execute();
         return $stmt->fetchAll();
     } catch (PDOException $e) {
-        // Registra a falha e preserva o formato de retorno de lista.
         error_log("Erro ao listar cursos do aluno: " . $e->getMessage());
         return [];
     }
 }
 
-/**
- * Recupera o perfil de talento associado a um aluno.
- * Retorna o registro ou false quando não existe perfil ou ocorre uma falha.
- */
-function obterPerfilTalentoPorAluno($conexao, $id_aluno) {
-    // Sem conexão não é possível verificar se o aluno já possui perfil.
-    if (!$conexao) return false;
-    try {
-        // Prepara a busca usando a coluna única que associa perfil e aluno.
-        $stmt = $conexao->prepare("SELECT * FROM perfil_talento WHERE id_aluno = :id_aluno");
-        $stmt->bindParam(":id_aluno", $id_aluno, PDO::PARAM_INT);
-        // Executa e devolve o perfil correspondente ou false se não houver registro.
-        $stmt->execute();
-        return $stmt->fetch();
-    } catch (PDOException $e) {
-        // Registra qualquer erro de banco ao consultar o perfil.
-        error_log("Erro ao buscar perfil de talento: " . $e->getMessage());
-        return false;
-    }
-}
-
-/**
- * Cria ou atualiza o perfil de talento do aluno conforme já exista um registro.
- * Atualizações também registram o horário atual em atualizado_em.
- */
-function salvarPerfilTalento($conexao, $id_aluno, $titulo_profissional, $bio, $linkedin, $github, $habilidades, $disponivel_mercado = true) {
-    // Não tenta gravar informações se o PDO não estiver disponível.
-    if (!$conexao) return false;
-    try {
-        // Verifica se já há um perfil para decidir entre UPDATE e INSERT.
-        $existente = obterPerfilTalentoPorAluno($conexao, $id_aluno);
-        // Normaliza os formatos possíveis do campo de disponibilidade para um booleano.
-        $disponivel = ($disponivel_mercado === 'true' || $disponivel_mercado === true || $disponivel_mercado === 1 || $disponivel_mercado === '1');
-        
-        // Perfil existente: atualiza os dados e registra o momento da edição.
-        if ($existente) {
-            $sql = "UPDATE perfil_talento 
-                    SET titulo_profissional = :titulo, bio = :bio, linkedin = :linkedin, github = :github, 
-                        habilidades = :habilidades, disponivel_mercado = :disponivel, atualizado_em = CURRENT_TIMESTAMP
-                    WHERE id_aluno = :id_aluno";
-        } else {
-            // Sem perfil anterior: prepara um novo registro associado ao aluno.
-            $sql = "INSERT INTO perfil_talento (id_aluno, titulo_profissional, bio, linkedin, github, habilidades, disponivel_mercado)
-                    VALUES (:id_aluno, :titulo, :bio, :linkedin, :github, :habilidades, :disponivel)";
-        }
-        // Prepara a operação escolhida e vincula o aluno e os dados profissionais.
-        $stmt = $conexao->prepare($sql);
-        $stmt->bindParam(":id_aluno", $id_aluno, PDO::PARAM_INT);
-        $stmt->bindParam(":titulo", $titulo_profissional);
-        $stmt->bindParam(":bio", $bio);
-        $stmt->bindParam(":linkedin", $linkedin);
-        $stmt->bindParam(":github", $github);
-        $stmt->bindParam(":habilidades", $habilidades);
-        // Envia a disponibilidade ao PostgreSQL com o tipo booleano correto.
-        $stmt->bindValue(":disponivel", $disponivel, PDO::PARAM_BOOL);
-        // Executa INSERT ou UPDATE e retorna o resultado.
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        // Registra problemas técnicos para diagnóstico.
-        error_log("Erro ao salvar perfil de talento: " . $e->getMessage());
-        return false;
-    }
-}
-
-/**
- * Lista perfis disponíveis de alunos ativos para exibição na vitrine pública.
- * Os resultados são ordenados pela atualização mais recente.
- */
-function listarTalentosPublicos($conexao) {
-    // Se o banco estiver indisponível, não há resultados públicos a exibir.
-    if (!$conexao) return [];
-    try {
-        // Junta cada perfil ao aluno e seleciona apenas perfis visíveis de alunos ativos.
-        $sql = "SELECT p.*, a.nome AS aluno_nome, a.email AS aluno_email, a.turma
-                FROM perfil_talento p
-                JOIN alunos a ON p.id_aluno = a.id
-                WHERE p.disponivel_mercado = true AND a.ativo = true
-                ORDER BY p.atualizado_em DESC";
-        // Executa a consulta ordenada do perfil mais recentemente atualizado ao mais antigo.
-        $stmt = $conexao->query($sql);
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
-        // Registra o erro e retorna lista vazia para a vitrine.
-        error_log("Erro ao listar talentos públicos: " . $e->getMessage());
-        return [];
-    }
-}
-
-/**
- * Valida a data de nascimento garantindo idade entre 14 e 100 anos, sem permitir datas futuras.
- * Retorna a data no formato Y-m-d, null se estiver vazia (campo opcional), ou false em caso de erro.
- */
+// Valida a data de nascimento e a faixa etária aceita para o cadastro escolar.
 function validarDataNascimento($data_string, &$mensagem_erro = null) {
     $data_limpa = trim((string)$data_string);
     if ($data_limpa === '') {
