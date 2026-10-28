@@ -18,3 +18,5 @@
 
     </div>
 </footer>
+
+<script src="<?php echo $base_url; ?>assets/app.js" defer></script>

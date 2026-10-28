@@ -54,8 +54,9 @@ $usuario_logado = obterUsuarioLogado();
 
 <!-- BARRA DE NAVEGAÇÃO PRINCIPAL -->
 <!-- Presente em todas as páginas — os links mudam conforme o perfil do usuário -->
-<nav>
-    <div class="nav-container">
+<nav aria-label="Navegação principal">
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-navigation" hidden>Menu ☰</button>
+    <div class="nav-container" id="main-navigation">
 
         <!-- Link para o Portal da Empresa -->
         <!-- A classe 'active' é adicionada dinamicamente se o usuário estiver nessa página -->

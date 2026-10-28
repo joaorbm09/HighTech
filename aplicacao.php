@@ -6,6 +6,10 @@ require_once __DIR__ . '/includes/auth.php';
 
 // Importa as funções reutilizáveis do sistema (buscar cursos, cadastrar aluno, matricular etc.)
 require_once __DIR__ . '/includes/functions.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { validarCamposTexto(['nome', 'cpf', 'email', 'id_curso', 'nasc']); }
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { exigirCsrf(); }
 
 /* CONTEXTO DO USUÁRIO — Identificação de quem está acessando a página */
 
@@ -47,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['inscrever'])) {
         $mensagem = '<div class="alert alert-warning">⚠️ ' . htmlspecialchars($nasc_erro) . '</div>';
     } else if (!$conexao) {
         $mensagem = '<div class="alert alert-danger">⚠️ Sem conexão com o banco de dados. Tente novamente mais tarde.</div>';
-    } else if (!empty($nome) && !empty($email) && !empty($id_curso)) {
+    } else if (!empty($nome) && is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) && filter_var($id_curso, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
 
         // Normaliza e busca o aluno existente pelo e-mail
         $aluno_db = buscarAlunoPorEmail($conexao, $email);
@@ -190,6 +194,7 @@ $data_min_nasc = date('Y-m-d', strtotime('-100 years'));
 
             <!-- O formulário envia os dados via POST para aplicacao.php (esta mesma página) -->
             <form action="aplicacao.php" method="post">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
                 <!-- Campo oculto que sinaliza ao PHP que este envio é uma inscrição -->
                 <input type="hidden" name="inscrever" value="1">
                 <!-- Layout em grade com duas colunas para organizar os campos do formulário -->

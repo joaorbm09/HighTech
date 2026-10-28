@@ -1,7 +1,11 @@
 <?php 
 // Inclusão de Dependências (Arquivos Auxiliares)
 require_once __DIR__ . '/includes/auth.php'; //auth.php: Carrega as regras de autenticação e sessão.
-require_once __DIR__ . '/includes/functions.php'; // functions.php: Carrega as funções do sistema, incluindo a função de conexão com o banco de dados ($conexao) e a função que salva os dados
+require_once __DIR__ . '/includes/functions.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { validarCamposTexto(['nome_empresa', 'cnpj', 'responsavel', 'email', 'telefone', 'tamanho_equipe', 'servico_interesse', 'mensagem']); }
+ // functions.php: Carrega as funções do sistema, incluindo a função de conexão com o banco de dados ($conexao) e a função que salva os dados
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { exigirCsrf(); }
 
 // Armazena o alerta que será exibido após o envio do formulário corporativo.
 $mensagem = '';
@@ -23,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
 
     // validação de campos obrigatorios
     // esta garantindo que os campos obrigatórios n estejam vazios pra serem salvos no banco de dados
-    if (!empty($nome_empresa) && !empty($responsavel) && !empty($email) && !empty($servico_interesse)) {
+    if (!empty($nome_empresa) && !empty($responsavel) && filter_var($email, FILTER_VALIDATE_EMAIL) && !empty($servico_interesse)) {
         // chamando a função, passando a conexãp do banco e dados coletados
         if (cadastrarSolicitacaoEmpresa($conexao, $nome_empresa, $cnpj, $responsavel, $email, $telefone, $tamanho_equipe, $servico_interesse, $msg)) {
             // se der true ele retornara uma mensagem de sucesso estilizada com a classe Bootstrap alert-success.
@@ -59,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
         <div class="container">
             <!-- serve para criar um emblema, etiqueta ou marcador visual pequeno no site  -->
             <span class="badge">Tecnologia & Inovação</span>
-            <h2>Soluções Corporativas & Capacitação de alto nivel</h2>
+            <h2>Soluções Corporativas & Capacitação de alto nível</h2>
             <p>Impulsionamos empresas e profissionais através de transformação digital, automação e formação especializada integrada ao banco de dados.</p>
         </div>
     </div>
@@ -75,6 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
             </div>
             <?php endif; ?>
 
+        <?php echo $mensagem; ?>
+
         <!-- NUMEROS E DIFERENCIAIS -->
          <!-- Funciona como a "caixa mãe" que segura todos os cartões. -->
          <!-- Resume dados e diferenciais do projeto em cartões estatísticos. -->
@@ -86,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
                 <span class="stat-label">Foco em prática e mercado real</span>
             </div>
             <!-- A classe stat-success aplica uma cor verde (ou azul/positiva) ao número ou à borda do cartão para indicar sucesso ou qualidade. -->
-            <div class="stat-car stat-succes">
+            <div class="stat-card stat-success">
                 <span class="stat-number">100%</span>
                 <span class="stat-label">Foco em prática e mercado Real</span>
             </div>
@@ -98,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
             <!-- A classe stat-warning aplica um tom amarelado ou alaranjado para chamar atenção ao portal de talentos da empresa. -->
             <div class="stat-card stat-warning">
                 <span class="stat-number">Talent hub</span>
-                <span class="stat-label">Ponte direta alunos e emrpesas</span>
+                <span class="stat-label">Ponte direta alunos e empresas</span>
             </div>
          </div>
 
@@ -107,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
         <section id="servicos">
             <!-- cabeçalho a seção que define o título e a introdução da seção de serviços para instruir o visitante sobre o tipo de apoio digital que a empresa oferece -->
             <div class="section-header">
-                <h2>SErvios e apoio para empresas de tecnologias</h2>
+                <h2>Serviços e apoio para empresas de tecnologia</h2>
                 <p>Desenvolvemos soluções sob medida para apoirar empresas em diferentes estágios de maturidade digital:</p>
             </div>
             <!-- GRADE DE SERVIÇOS -->
@@ -199,6 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['solicitar_diagnostico
 
             <!-- POST evita colocar dados de contato e mensagem na URL. -->
             <form action="portal_empresa.php#diagnostico" method="post">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="solicitar_diagnostico" value="1">
 
                 <!-- Agrupa os campos do contato e do serviço solicitado em um layout responsivo. -->

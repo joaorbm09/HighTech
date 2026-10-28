@@ -8,6 +8,10 @@ require_once __DIR__ . '/../includes/auth.php';
 // Importa funções auxiliares gerais do sistema (helpers reutilizáveis)
 // Esse arquivo também inicializa a variável $conexao com o banco de dados PostgreSQL
 require_once __DIR__ . '/../includes/functions.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { validarCamposTexto(['email', 'senha']); }
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { exigirCsrf(); }
 
 /* VERIFICAÇÃO DE SESSÃO ATIVA — Evita que usuário já logado veja a tela de login novamente */
 
@@ -43,7 +47,7 @@ if (isset($_GET['sucesso']) && $_GET['sucesso'] === 'cadastrado') {
 // Se a variável $conexao for falsa (null, false ou recurso inválido), avisa o usuário sobre o problema
 // Isso protege o sistema de tentar executar queries sem conexão, o que causaria erros PHP fatais
 if (!$conexao) {
-    $mensagem = '<div class="alert alert-danger"> Erro de conexão com o banco de dados PostgreSQL. Verifique as configurações em database/connect.php.</div>';
+    $mensagem = '<div class="alert alert-danger"> Serviço temporariamente indisponível. Tente novamente mais tarde.</div>';
 }
 
 /* PROCESSAMENTO DO FORMULÁRIO — Executado apenas quando o formulário de login é enviado via POST */
@@ -79,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             /* CRIAÇÃO DA SESSÃO — Armazena os dados do usuário autenticado na sessão PHP */
 
             // Salva o ID único do usuário na sessão para identificá-lo em todas as próximas requisições
+            session_regenerate_id(true);
             $_SESSION['user_id'] = $usuario['id'];
 
             // Salva o nome completo para exibição personalizada nas telas do sistema
@@ -147,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Formulário de login: envia os dados via POST para este mesmo arquivo (login.php) -->
             <!-- O método POST é usado porque dados sensíveis (senha) não devem aparecer na URL -->
             <form action="login.php" method="post">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
 
                 <!-- Campo de e-mail usado pelo servidor para localizar a conta. -->
                 <!-- Campo de e-mail: o type="email" valida o formato antes mesmo de enviar ao servidor -->

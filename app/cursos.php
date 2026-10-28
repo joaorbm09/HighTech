@@ -7,6 +7,8 @@ exigirAdmin();
 
 // Importa as funções auxiliares do sistema (listar, cadastrar, atualizar, excluir cursos)
 require_once __DIR__ . '/../includes/functions.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { validarCamposTexto(['id', 'nome', 'categoria', 'descricao', 'carga_horaria', 'ativo', 'acao']); }
+
 
 /* VARIÁVEIS DE CONTROLE DA PÁGINA */
 // Variável que armazenará mensagens de feedback para o usuário (sucesso, erro ou aviso)
@@ -18,6 +20,8 @@ $curso_edicao = null;
 if (empty($_SESSION['csrf_cursos'])) {
     $_SESSION['csrf_cursos'] = bin2hex(random_bytes(32));
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { exigirCsrf('csrf_token', 'csrf_cursos'); }
 
 /* BLOCO DE EXCLUSÃO DE CURSO (SEGURO VIA POST COM CSRF) */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'excluir') {
@@ -44,7 +48,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
 
 /* BLOCO DE SALVAMENTO E ATUALIZAÇÃO (FORMULÁRIO POST) */
 // Verifica se o formulário foi enviado via POST (método padrão e seguro para envio de dados)
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['acao'])) {
     // Captura o ID do curso (presente somente no modo edição; null no modo cadastro)
     $id = $_POST['id'] ?? null;
     // Captura o nome do curso digitado no formulário; se não enviado, usa string vazia
@@ -127,6 +131,7 @@ $cursos = listarCursos($conexao);
             <br>
             <!-- O formulário envia os dados para cursos.php via POST -->
             <form action="cursos.php" method="post">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_cursos'], ENT_QUOTES, 'UTF-8'); ?>">
                 <?php if ($curso_edicao): ?>
                     <!-- Campo oculto que transmite o ID do curso ao servidor no momento de salvar a edição -->
                     <!-- Sem ele, o sistema não saberia qual curso atualizar no banco -->
@@ -211,7 +216,7 @@ $cursos = listarCursos($conexao);
                 <p>Nenhum curso cadastrado.</p>
             <?php else: ?>
                 <!-- Tabela estilizada com a classe CSS do projeto -->
-                <table class="styled-table">
+                <div class="table-scroll" role="region" aria-label="Tabela de gestão" tabindex="0"><table class="styled-table">
                     <thead>
                         <tr>
                             <!-- Cabeçalhos das colunas da tabela -->
@@ -265,7 +270,7 @@ $cursos = listarCursos($conexao);
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
-                </table>
+                </table></div>
             <?php endif; ?>
         </div>
     </main>

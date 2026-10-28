@@ -189,16 +189,16 @@ if (!empty($busca)) {
                         <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
                             <!-- Botões lado a lado com flex-wrap para reorganizar em telas menores -->
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                <?php if (!empty($talento['linkedin'])): ?>
+                                <?php if (!empty($talento['linkedin']) && filter_var($talento['linkedin'], FILTER_VALIDATE_URL) && in_array(strtolower((string) parse_url($talento['linkedin'], PHP_URL_SCHEME)), ['http', 'https'], true)): ?>
                                     <!-- Link do LinkedIn: abre em nova aba para não tirar o usuário da página -->
-                                    <a href="<?php echo htmlspecialchars($talento['linkedin']); ?>" target="_blank" class="btn btn-outline" style="flex: 1; font-size: 0.85rem; padding: 0.4rem 0.6rem;">
+                                    <a href="<?php echo htmlspecialchars($talento['linkedin']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="flex: 1; font-size: 0.85rem; padding: 0.4rem 0.6rem;">
                                         LinkedIn ↗
                                     </a>
                                 <?php endif; ?>
 
-                                <?php if (!empty($talento['github'])): ?>
+                                <?php if (!empty($talento['github']) && filter_var($talento['github'], FILTER_VALIDATE_URL) && in_array(strtolower((string) parse_url($talento['github'], PHP_URL_SCHEME)), ['http', 'https'], true)): ?>
                                     <!-- Link do GitHub: útil para empresas avaliarem o portfólio de código do candidato -->
-                                    <a href="<?php echo htmlspecialchars($talento['github']); ?>" target="_blank" class="btn btn-outline" style="flex: 1; font-size: 0.85rem; padding: 0.4rem 0.6rem;">
+                                    <a href="<?php echo htmlspecialchars($talento['github']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="flex: 1; font-size: 0.85rem; padding: 0.4rem 0.6rem;">
                                         GitHub ↗
                                     </a>
                                 <?php endif; ?>

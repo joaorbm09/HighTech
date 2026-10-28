@@ -5,6 +5,8 @@ exigirLogin();
 
 // Carrega operações de banco usadas para consultar cursos e salvar o perfil do aluno.
 require_once __DIR__ . '/../includes/functions.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { validarCamposTexto(['titulo_profissional', 'bio', 'linkedin', 'github', 'habilidades']); }
+
 
 // Recupera a identidade autenticada e prepara o feedback apresentado nesta página.
 $usuario = obterUsuarioLogado();
@@ -25,6 +27,7 @@ $id_aluno = $aluno['id'] ?? null;
 // Salvar / Atualizar Perfil de Talento
 // Distingue o envio do formulário de perfil de outras ações POST da mesma página.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_perfil']) && $id_aluno) {
+    exigirCsrf();
     // Lê e normaliza os campos textuais do perfil enviados pelo formulário.
     $titulo_profissional = trim($_POST['titulo_profissional'] ?? '');
     $bio = trim($_POST['bio'] ?? '');
@@ -237,6 +240,7 @@ foreach ($meus_cursos as $c) {
             </div>
 
             <form action="meu_painel.php#perfil-profissional" method="post">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="salvar_perfil" value="1">
 
                 <div class="form-grid">

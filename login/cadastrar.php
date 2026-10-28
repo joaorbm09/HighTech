@@ -2,6 +2,10 @@
 // Carrega as verificações de sessão e as funções usadas no cadastro.
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { validarCamposTexto(['nome', 'email', 'senha', 'confirmar_senha']); }
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { exigirCsrf(); }
 
 // Usuários autenticados seguem para a aplicação sem criar outra conta.
 if (usuarioLogado()) {
@@ -12,11 +16,6 @@ if (usuarioLogado()) {
 $mensagem = '';
 $nome = '';
 $email = '';
-
-// Token CSRF para proteger a criação de contas contra requisições externas.
-if (empty($_SESSION['csrf_cadastro'])) {
-    $_SESSION['csrf_cadastro'] = bin2hex(random_bytes(32));
-}
 
 // Detecta indisponibilidade do banco antes que o formulário seja enviado.
 if (!$conexao) {
@@ -31,17 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Senhas não recebem trim para não alterar caracteres digitados pelo usuário.
     $senha = $_POST['senha'] ?? '';
     $confirmar_senha = $_POST['confirmar_senha'] ?? '';
-    $csrf_token = $_POST['csrf_token'] ?? '';
-
-    if (!is_string($csrf_token) || !hash_equals($_SESSION['csrf_cadastro'], $csrf_token)) {
-        $mensagem = '<div class="alert alert-danger">Falha na validação de segurança. Atualize a página e tente novamente.</div>';
-    }
-
     // Verifica os campos obrigatórios antes de fazer qualquer consulta ou gravação.
     if (empty($nome) || empty($email) || empty($senha)) {
         $mensagem = '<div class="alert alert-warning">Por favor, preencha todos os campos obrigatórios.</div>';
     } else if (!$conexao) {
         $mensagem = '<div class="alert alert-danger">Não foi possível processar o cadastro: banco de dados offline.</div>';
+    } else if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($nome) > 100 || strlen($email) > 100) {
+        $mensagem = '<div class="alert alert-warning">Informe nome e e-mail válidos.</div>';
     } else if ($senha !== $confirmar_senha) {
         $mensagem = '<div class="alert alert-warning">As senhas digitadas não coincidem!</div>';
     } else if (strlen($senha) < 6) {
@@ -89,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Envia os dados sensíveis por POST para processamento neste mesmo arquivo. -->
             <form action="cadastrar.php" method="post">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
                 <!-- Campo obrigatório para identificar o novo aluno. -->
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label for="nome">Nome Completo: *</label>

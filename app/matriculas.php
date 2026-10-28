@@ -7,6 +7,8 @@ exigirAdmin();
 
 // Importa as funções auxiliares do sistema (matricular, listar, excluir matrículas)
 require_once __DIR__ . '/../includes/functions.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { validarCamposTexto(['id', 'id_aluno', 'id_curso', 'status', 'acao']); }
+
 
 /* VARIÁVEIS DE CONTROLE DA PÁGINA */
 // Variável que armazenará mensagens de feedback para o usuário (sucesso, erro ou aviso)
@@ -16,6 +18,8 @@ $mensagem = '';
 if (empty($_SESSION['csrf_matriculas'])) {
     $_SESSION['csrf_matriculas'] = bin2hex(random_bytes(32));
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { exigirCsrf('csrf_token', 'csrf_matriculas'); }
 
 /* BLOCO DE CANCELAMENTO / EXCLUSÃO DE MATRÍCULA (SEGURO VIA POST COM CSRF) */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'cancelar') {
@@ -35,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
 /* BLOCO DE CRIAÇÃO DE NOVA MATRÍCULA (FORMULÁRIO POST) */
 // Verifica se o formulário foi enviado via POST (ação de confirmar nova matrícula)
 // A matrícula é a tabela intermediária que implementa o relacionamento N:N entre alunos e cursos
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['acao'])) {
     // Captura o ID do aluno selecionado no <select> do formulário
     $id_aluno = $_POST['id_aluno'] ?? null;
     // Captura o ID do curso selecionado no <select> do formulário
@@ -107,6 +111,7 @@ $matriculas = listarMatriculas($conexao);
             <br>
             <!-- O formulário envia os dados para matriculas.php via POST -->
             <form action="matriculas.php" method="post">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_matriculas'], ENT_QUOTES, 'UTF-8'); ?>">
                 <!-- Grid de campos para organizar o formulário em colunas -->
                 <div class="form-grid">
                     <!-- Campo: Seleção do Aluno (obrigatório) -->
@@ -176,7 +181,7 @@ $matriculas = listarMatriculas($conexao);
                 <p>Nenhuma matrícula registrada até o momento.</p>
             <?php else: ?>
                 <!-- Tabela estilizada com a classe CSS do projeto -->
-                <table class="styled-table">
+                <div class="table-scroll" role="region" aria-label="Tabela de gestão" tabindex="0"><table class="styled-table">
                     <thead>
                         <tr>
                             <!-- Cabeçalhos das colunas — combinam dados das três tabelas do JOIN -->
@@ -232,7 +237,7 @@ $matriculas = listarMatriculas($conexao);
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
-                </table>
+                </table></div>
             <?php endif; ?>
         </div>
     </main>

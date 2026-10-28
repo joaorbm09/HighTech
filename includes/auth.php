@@ -4,6 +4,34 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+
+// Token comum aos formulários que ainda não possuem um token próprio.
+function csrfToken() {
+    if (empty($_SESSION['csrf_global'])) {
+        $_SESSION['csrf_global'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_global'];
+}
+
+// Rejeita estruturas inesperadas antes de tratar campos escalares de formulários.
+function validarCamposTexto($campos) {
+    foreach ($campos as $campo) {
+        if (isset($_POST[$campo]) && !is_string($_POST[$campo])) {
+            http_response_code(400);
+            exit('Dados inválidos. Atualize a página e tente novamente.');
+        }
+    }
+}
+
+function exigirCsrf($campo = 'csrf_token', $chave = 'csrf_global') {
+    $token = $_POST[$campo] ?? null;
+    $esperado = $_SESSION[$chave] ?? null;
+    if (!is_string($token) || !is_string($esperado) || !hash_equals($esperado, $token)) {
+        http_response_code(403);
+        exit('Solicitação inválida ou expirada. Atualize a página e tente novamente.');
+    }
+}
+
 /**
  * Verifica se existe um usuário logado na sessão.
  */

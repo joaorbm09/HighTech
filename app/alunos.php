@@ -7,6 +7,8 @@ exigirAdmin();
 
 // Importa as funções auxiliares do sistema (listar, cadastrar, atualizar, excluir alunos)
 require_once __DIR__ . '/../includes/functions.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { validarCamposTexto(['id', 'nome', 'cpf', 'email', 'turma', 'nasc', 'ativo', 'acao']); }
+
 
 /* VARIÁVEIS DE CONTROLE DA PÁGINA */
 // Variável que armazenará mensagens de feedback para o usuário (sucesso, erro, aviso)
@@ -18,6 +20,8 @@ $aluno_edicao = null;
 if (empty($_SESSION['csrf_alunos'])) {
     $_SESSION['csrf_alunos'] = bin2hex(random_bytes(32));
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { exigirCsrf('csrf_token', 'csrf_alunos'); }
 
 /* BLOCO DE EXCLUSÃO DE ALUNO (SEGURO VIA POST COM CSRF) */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'excluir') {
@@ -44,7 +48,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
 
 /* BLOCO DE SALVAMENTO E ATUALIZAÇÃO (FORMULÁRIO POST) */
 // Verifica se o formulário foi enviado via POST (método padrão para envio de dados)
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['acao'])) {
     // Captura o ID do aluno (presente somente no modo edição; null no cadastro)
     $id = $_POST['id'] ?? null;
     // Captura o nome digitado no formulário; se não enviado, usa string vazia
@@ -55,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     // Captura a turma do aluno (campo opcional)
     $turma = $_POST['turma'] ?? '';
+    $ativo = $_POST['ativo'] ?? 'true';
     // Valida a data de nascimento se informada (14 a 100 anos, sem datas futuras)
     $nasc_raw = trim($_POST['nasc'] ?? '');
     $nasc_erro = '';
@@ -63,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Valida os campos obrigatórios: Nome e E-mail não podem estar vazios
     if ($nasc === false) {
         $mensagem = '<div class="alert alert-warning">⚠️ ' . htmlspecialchars($nasc_erro) . '</div>';
-    } else if (!empty($nome) && !empty($email)) {
+    } else if (!empty($nome) && is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
         // Se $id existe, estamos editando um aluno já cadastrado
         if ($id) {
             // Chama a função de UPDATE passando todos os campos atualizados
@@ -138,6 +143,7 @@ $data_min_nasc = date('Y-m-d', strtotime('-100 years'));
             <br>
             <!-- O formulário envia os dados para alunos.php via POST -->
             <form action="alunos.php" method="post">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_alunos'], ENT_QUOTES, 'UTF-8'); ?>">
                 <?php if ($aluno_edicao): ?>
                     <!-- Campo oculto que transmite o ID do aluno ao servidor no momento de salvar a edição -->
                     <!-- Sem ele, o sistema não saberia qual aluno atualizar no banco -->
@@ -218,7 +224,7 @@ $data_min_nasc = date('Y-m-d', strtotime('-100 years'));
                 <p>Nenhum aluno cadastrado no banco de dados.</p>
             <?php else: ?>
                 <!-- Tabela estilizada com a classe CSS do projeto -->
-                <table class="styled-table">
+                <div class="table-scroll" role="region" aria-label="Tabela de gestão" tabindex="0"><table class="styled-table">
                     <thead>
                         <tr>
                             <!-- Cabeçalhos das colunas da tabela -->
@@ -274,7 +280,7 @@ $data_min_nasc = date('Y-m-d', strtotime('-100 years'));
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
-                </table>
+                </table></div>
             <?php endif; ?>
         </div>
     </main>
